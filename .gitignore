@@ -1,0 +1,28 @@
+# Compilación
+target/
+build/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+application-local.yml
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs y grabaciones
+*.log
+grabaciones/
