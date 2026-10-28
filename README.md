@@ -25,8 +25,8 @@ Proyecto de Ingeniería del Software 3 · Universidad Cenfotec · C2 2026 · **B
 
 | Componente | Tecnología |
 |---|---|
-| Lenguaje | Java 21 (LTS) |
-| Framework | Spring Boot 3, Spring Security (OAuth de Google) |
+| Lenguaje | Java 25 |
+| Framework | Spring Boot 4.1.2, Spring Security (OAuth de Google) |
 | Base de datos | PostgreSQL |
 | Migraciones | Flyway |
 | Dependencias | Maven |
