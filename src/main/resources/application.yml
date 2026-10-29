@@ -36,3 +36,8 @@ spring:
 whisper:
   api:
     url: ${WHISPER_API_URL:http://localhost:8000/transcribir}
+
+app:
+  storage:
+    grabaciones:
+      path: ./uploads/grabaciones
