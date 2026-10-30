@@ -22,7 +22,7 @@ public class MencionCompetencia {
     private String competidor;
 
     @Column(nullable = false)
-    private Integer frecuencia;
+    private Short frecuencia;
 
     @Column(length = 500)
     private String contexto;

@@ -4,6 +4,6 @@ public record MencionCompetenciaDTO(
         Long id,
         Long analisisId,
         String competidor,
-        Integer frecuencia,
+        Short frecuencia,
         String contexto
 ) {}

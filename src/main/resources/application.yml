@@ -16,6 +16,9 @@ spring:
     multipart:
       max-file-size: 500MB
       max-request-size: 500MB
+  docker:
+    compose:
+      file: docker/docker-compose.yml
 
   # LA CONFIGURACIÓN DE IA VA AQUÍ, DENTRO DE "spring:"
   ai:
@@ -36,3 +39,8 @@ spring:
 whisper:
   api:
     url: ${WHISPER_API_URL:http://localhost:8000/transcribir}
+
+app:
+  storage:
+    grabaciones:
+      path: ./uploads/grabaciones

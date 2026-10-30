@@ -6,6 +6,10 @@ import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+
 
 @Entity
 @Table(name = "transcripciones")
@@ -38,9 +42,11 @@ public class Transcripcion {
     @Column(name = "mensaje_error", length = 500)
     private String mensajeError;
 
-    @Column(name = "creado_en", nullable = false)
+    @CreationTimestamp
+    @Column(name = "creado_en", nullable = false, updatable = false)
     private OffsetDateTime creadoEn;
 
+    @UpdateTimestamp
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
 }
