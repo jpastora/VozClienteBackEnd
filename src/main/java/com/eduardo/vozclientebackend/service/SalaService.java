@@ -3,6 +3,8 @@ package com.eduardo.vozclientebackend.service;
 import com.eduardo.vozclientebackend.dto.SalaDTO;
 import com.eduardo.vozclientebackend.enums.EstadoSala;
 import com.eduardo.vozclientebackend.mappers.SalaMapper;
+import com.eduardo.vozclientebackend.models.Cuenta;
+import com.eduardo.vozclientebackend.models.Producto;
 import com.eduardo.vozclientebackend.models.Sala;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.ProductoRepository;
@@ -40,14 +42,22 @@ public class SalaService {
             throw new IllegalArgumentException("El producto es obligatorio");
         }
 
-        cuentaRepository.findById(salaDTO.creadoPorId())
+        // 1. CAPTURAR las entidades reales de la BD
+        Cuenta cuenta = cuentaRepository.findById(salaDTO.creadoPorId())
             .orElseThrow(() -> new RuntimeException(
                 "La cuenta especificada no existe con ID: " + salaDTO.creadoPorId()));
-        productoRepository.findById(salaDTO.productoId())
+
+        Producto producto = productoRepository.findById(salaDTO.productoId())
             .orElseThrow(() -> new RuntimeException(
                 "El producto especificado no existe con ID: " + salaDTO.productoId()));
 
+        // 2. Mapear los datos básicos
         Sala sala = salaMapper.toEntity(salaDTO);
+
+        // 3. ASIGNAR las entidades a la sala (¡Esta es la clave para que no guarden null!)
+        sala.setProductoId(salaDTO.productoId());
+        sala.setCreadoPorId(salaDTO.creadoPorId());
+        // 4. Generar token y fechas
         sala.setToken(generarTokenUnico());
         sala.setEstado(EstadoSala.PENDIENTE);
         OffsetDateTime ahora = OffsetDateTime.now();

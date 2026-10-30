@@ -25,6 +25,8 @@ services:
     build:
       context: ../python-api
     container_name: whisper-api
+    ports:
+      - "127.0.0.1:8000:8000"
     environment:
       - WHISPER_MODEL=small      # tiny, base, small, medium, large-v3
       - WHISPER_LANGUAGE=es      # vacío = detección automática

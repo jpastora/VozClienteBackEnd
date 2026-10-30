@@ -43,7 +43,7 @@ public class Analisis {
     private String proveedorIa;
 
     @Column(nullable = false)
-    private Integer intentos;
+    private Short intentos;
 
     @Column(name = "mensaje_error", length = 500)
     private String mensajeError;

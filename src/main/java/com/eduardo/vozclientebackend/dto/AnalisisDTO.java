@@ -15,7 +15,7 @@ public record AnalisisDTO(
         String fragmentoApoyo,
         Boolean tieneMenciones,
         String proveedorIa,
-        Integer intentos,
+        Short intentos,
         String mensajeError,
         OffsetDateTime creadoEn,
         OffsetDateTime actualizadoEn

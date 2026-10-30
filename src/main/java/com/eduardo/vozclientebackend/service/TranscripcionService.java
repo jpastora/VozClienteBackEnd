@@ -69,6 +69,7 @@ public class TranscripcionService {
             .orElseGet(() -> {
                 Transcripcion nueva = new Transcripcion();
                 nueva.setGrabacionId(grabacionId);
+                nueva.setIntentos(1);
                 return nueva;
             });
 
