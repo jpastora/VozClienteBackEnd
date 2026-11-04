@@ -33,7 +33,7 @@ public class GrabacionService {
 
     // Ruta donde se guardarán los archivos .webm (puedes configurarlo en application.properties)
     // Ejemplo: app.storage.grabaciones.path=/var/data/grabaciones
-    @Value("${app.storage.grabaciones.path:C:\\Users\\chaca\\Documents\\Bachillerato en ingenieria de Software\\Proyecto 3\\PruebaVideo}")
+    @Value("${GRABACIONES_RUTA:./uploads}")
     private String baseStoragePath;
 
     @PostConstruct
