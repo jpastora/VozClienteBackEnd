@@ -47,3 +47,7 @@ Thumbs.db
 ### Logs y grabaciones ###
 *.log
 grabaciones/
+
+### Postman ###
+/.postman/
+/postman/

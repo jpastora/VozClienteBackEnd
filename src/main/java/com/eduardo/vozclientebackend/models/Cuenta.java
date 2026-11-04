@@ -5,6 +5,7 @@ import com.eduardo.vozclientebackend.enums.RolCuenta;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.OffsetDateTime;
 
 @Entity
@@ -12,6 +13,7 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 public class Cuenta {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,10 +21,18 @@ public class Cuenta {
     @Column(name = "empresa_id")
     private Long empresaId;
 
-    @Column(name = "nombre_completo", nullable = false, length = 100)
+    @Column(
+        name = "nombre_completo",
+        nullable = false,
+        length = 100
+    )
     private String nombreCompleto;
 
-    @Column(nullable = false, unique = true, length = 254)
+    @Column(
+        nullable = false,
+        unique = true,
+        length = 254
+    )
     private String correo;
 
     @Column(name = "google_sub", length = 255)
@@ -39,6 +49,7 @@ public class Cuenta {
     @Column(name = "ultimo_ingreso_en")
     private OffsetDateTime ultimoIngresoEn;
 
+    @Version
     @Column(nullable = false)
     private Integer version;
 
