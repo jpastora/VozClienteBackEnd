@@ -2,6 +2,7 @@ package com.eduardo.vozclientebackend.controllers;
 
 import com.eduardo.vozclientebackend.dto.CambioRolDTO;
 import com.eduardo.vozclientebackend.dto.CambiarRolRequestDTO;
+import com.eduardo.vozclientebackend.dto.CrearAdministradorDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
 
 import com.eduardo.vozclientebackend.service.CuentaService;
@@ -9,6 +10,7 @@ import com.eduardo.vozclientebackend.service.CuentaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,20 @@ import java.util.List;
 public class CuentaController {
 
     private final CuentaService cuentaService;
+
+    /**
+     * POST /api/cuentas. Crea una cuenta de cliente administrador pendiente.
+     */
+    @PostMapping
+    public ResponseEntity<CuentaDTO> crearCuenta(
+        @Valid @RequestBody CrearAdministradorDTO dto) {
+
+        CuentaDTO cuenta = cuentaService.crearCuenta(dto);
+
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(cuenta);
+    }
 
     /**
      * GET /api/cuentas. Lista las cuentas de la empresa.

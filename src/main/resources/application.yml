@@ -43,4 +43,4 @@ whisper:
 app:
   storage:
     grabaciones:
-      path: ./uploads/grabaciones
+      path: ${APP_STORAGE_GRABACIONES_PATH:./uploads/grabaciones}

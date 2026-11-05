@@ -2,6 +2,7 @@ package com.eduardo.vozclientebackend.service;
 
 import com.eduardo.vozclientebackend.dto.CambioRolDTO;
 import com.eduardo.vozclientebackend.dto.CambiarRolRequestDTO;
+import com.eduardo.vozclientebackend.dto.CrearAdministradorDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
 
 import com.eduardo.vozclientebackend.enums.EstadoCuenta;
@@ -17,6 +18,7 @@ import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.EmpresaRepository;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -35,6 +38,51 @@ public class CuentaService {
     private final CuentaMapper cuentaMapper;
     private final UsuarioActualService usuarioActualService;
     private final EmpresaRepository empresaRepository;
+
+    /**
+     * Crea una cuenta de cliente administrador dentro del ámbito del administrador.
+     */
+    @Transactional
+    public CuentaDTO crearCuenta(CrearAdministradorDTO dto) {
+
+        Cuenta administrador = obtenerAdministrador();
+
+        String correo = dto.correo()
+            .trim()
+            .toLowerCase(Locale.ROOT);
+
+        if (cuentaRepository.existsByCorreoIgnoreCase(correo)) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Ya existe una cuenta registrada con este correo"
+            );
+        }
+
+        Cuenta cuenta = new Cuenta();
+        cuenta.setEmpresaId(administrador.getEmpresaId());
+        cuenta.setNombreCompleto(dto.nombreCompleto().trim());
+        cuenta.setCorreo(correo);
+        cuenta.setRol(RolCuenta.CLIENTE_ADMINISTRADOR);
+        cuenta.setEstado(EstadoCuenta.PENDIENTE);
+        cuenta.setGoogleSub(null);
+        cuenta.setUltimoIngresoEn(null);
+
+        OffsetDateTime ahora = OffsetDateTime.now();
+        cuenta.setCreadoEn(ahora);
+        cuenta.setActualizadoEn(ahora);
+        cuenta.setVersion(null);
+
+        try {
+            Cuenta guardada = cuentaRepository.saveAndFlush(cuenta);
+            return cuentaMapper.toDto(guardada);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "No se pudo crear la cuenta. Verifique el correo",
+                ex
+            );
+        }
+    }
 
     /**
      * Lista cuentas dentro del ámbito del administrador.
