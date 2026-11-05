@@ -49,6 +49,8 @@ services:
       context: ..
       dockerfile: Dockerfile
     container_name: spring-backend
+    labels:
+      - "org.springframework.boot.ignore=true"
     ports:
       - "8070:8070"
     depends_on:
@@ -61,7 +63,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - WHISPER_API_URL=http://whisper-api:8000/transcribir
-      - GRABACIONES_RUTA=/app/grabaciones
+      - APP_STORAGE_GRABACIONES_PATH=/app/grabaciones
       # Pendientes de definir (descomentar cuando estén listas):
       # - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-dev}
       # - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}

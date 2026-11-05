@@ -17,14 +17,20 @@ public class Compra {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "empresa_id", nullable = false)
-    private Long empresaId;
+    // Relación con Empresa
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
-    @Column(name = "paquete_id", nullable = false)
-    private Long paqueteId;
+    // Relación con Paquete
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paquete_id", nullable = false)
+    private Paquete paquete;
 
-    @Column(name = "cuenta_id", nullable = false)
-    private Long cuentaId;
+    // Relación con Cuenta
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cuenta_id", nullable = false)
+    private Cuenta cuenta;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal monto;
@@ -34,7 +40,7 @@ public class Compra {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_pago", nullable = false, length = 20)
-    private EstadoPago estadoPago;    // <-- Cambiado a Enum
+    private EstadoPago estadoPago;
 
     @Column(name = "referencia_pago", length = 100)
     private String referenciaPago;
