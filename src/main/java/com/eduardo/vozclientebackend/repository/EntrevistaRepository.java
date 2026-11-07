@@ -5,6 +5,7 @@ import com.eduardo.vozclientebackend.models.Entrevista;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -18,4 +19,6 @@ public interface EntrevistaRepository extends JpaRepository<Entrevista, Long> {
 
     // Filtrar entrevistas por su estado (EN_CURSO, FINALIZADA, FALLIDA)
     List<Entrevista> findByEstado(EstadoEntrevista estado);
+
+    List<Entrevista> findByEstadoAndInicioEnBefore(EstadoEntrevista estado, OffsetDateTime limite);
 }

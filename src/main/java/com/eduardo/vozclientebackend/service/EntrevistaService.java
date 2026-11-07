@@ -87,6 +87,28 @@ public class EntrevistaService {
         return entrevistaMapper.toDto(entrevistaActualizada);
     }
 
+    @Transactional
+    public void cerrarEntrevistasHuerfanas(int minutosExpiracion) {
+        OffsetDateTime limite = OffsetDateTime.now().minusMinutes(minutosExpiracion);
+
+        List<Entrevista> huerfanas = entrevistaRepository.findByEstadoAndInicioEnBefore(
+            EstadoEntrevista.EN_CURSO,
+            limite
+        );
+
+        for (Entrevista entrevista : huerfanas) {
+            entrevista.setEstado(EstadoEntrevista.FALLIDA); // O el estado que prefieras para estos casos
+            entrevista.setFinEn(OffsetDateTime.now());
+
+            long duracion = ChronoUnit.SECONDS.between(entrevista.getInicioEn(), entrevista.getFinEn());
+            entrevista.setDuracionSegundos((int) duracion);
+        }
+
+        if (!huerfanas.isEmpty()) {
+            entrevistaRepository.saveAll(huerfanas);
+        }
+    }
+
     @Transactional(readOnly = true)
     public EntrevistaDTO obtenerPorId(Long id) {
         return entrevistaMapper.toDto(buscarEntrevistaPorId(id));

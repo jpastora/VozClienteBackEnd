@@ -1,7 +1,9 @@
 package com.eduardo.vozclientebackend.controllers;
 
 import com.eduardo.vozclientebackend.dto.ProductoDTO;
+import com.eduardo.vozclientebackend.dto.ProductoRequestDTO;
 import com.eduardo.vozclientebackend.service.ProductoService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,14 +19,16 @@ public class ProductoController {
     private final ProductoService productoService;
 
     @PostMapping
-    public ResponseEntity<ProductoDTO> crearProducto(@RequestBody ProductoDTO productoDTO) {
-        ProductoDTO nuevoProducto = productoService.crearProducto(productoDTO);
+    public ResponseEntity<ProductoDTO> crearProducto(@Valid @RequestBody ProductoRequestDTO request) {
+        ProductoDTO nuevoProducto = productoService.crearProducto(request);
         return new ResponseEntity<>(nuevoProducto, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoDTO> actualizarProducto(@PathVariable Long id, @RequestBody ProductoDTO productoDTO) {
-        ProductoDTO productoActualizado = productoService.actualizarProducto(id, productoDTO);
+    public ResponseEntity<ProductoDTO> actualizarProducto(
+        @PathVariable Long id,
+        @Valid @RequestBody ProductoRequestDTO request) {
+        ProductoDTO productoActualizado = productoService.actualizarProducto(id, request);
         return ResponseEntity.ok(productoActualizado);
     }
 
@@ -34,15 +38,18 @@ public class ProductoController {
         return ResponseEntity.ok(producto);
     }
 
-    @GetMapping("/empresa/{empresaId}")
-    public ResponseEntity<List<ProductoDTO>> obtenerPorEmpresa(@PathVariable Long empresaId) {
-        List<ProductoDTO> productos = productoService.obtenerTodosPorEmpresa(empresaId);
+    // Ruta simplificada: GET /api/productos
+    // Devuelve automáticamente los productos de la empresa del usuario
+    @GetMapping
+    public ResponseEntity<List<ProductoDTO>> obtenerTodos() {
+        List<ProductoDTO> productos = productoService.obtenerTodosPorEmpresa();
         return ResponseEntity.ok(productos);
     }
 
-    @GetMapping("/empresa/{empresaId}/activos")
-    public ResponseEntity<List<ProductoDTO>> obtenerActivosPorEmpresa(@PathVariable Long empresaId) {
-        List<ProductoDTO> productos = productoService.obtenerActivosPorEmpresa(empresaId);
+    // Ruta simplificada: GET /api/productos/activos
+    @GetMapping("/activos")
+    public ResponseEntity<List<ProductoDTO>> obtenerActivos() {
+        List<ProductoDTO> productos = productoService.obtenerActivosPorEmpresa();
         return ResponseEntity.ok(productos);
     }
 
