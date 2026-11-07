@@ -17,7 +17,7 @@ public class DevTestSecurityConfig {
         throws Exception {
 
         http
-            .securityMatcher("/api/cuentas/**", "/api/representantes/**")
+            .securityMatcher("/api/cuentas/**", "/api/representantes/**", "/api/productos/**")
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
