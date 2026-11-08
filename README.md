@@ -214,6 +214,17 @@ Ejecución:
 - El archivo `.env` está excluido en `.gitignore`; se versiona únicamente `.env.example` sin valores reales.
 - Si se expone una clave por error, se revoca y se regenera de inmediato (riesgo R-C04).
 
+### 9.1 Ingreso con Google (HU-01)
+
+1. Copie `docker/.env.example` como `docker/.env` y complete `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (los entrega la Coordinadora de soporte) y `JWT_SECRET` (`openssl rand -base64 48`).
+2. Solo pueden ingresar los correos registrados como **usuarios de prueba** en el proyecto de Google Cloud; pida que agreguen el suyo.
+3. El ingreso empieza en `/oauth2/authorization/google`. Al volver de Google, el back-end crea la empresa y la cuenta (primer ingreso) o vincula la existente, y guarda un JWT propio en la cookie HttpOnly `VC_SESION`.
+4. La sesión expira tras `APP_MINUTOS_INACTIVIDAD` minutos sin actividad (30 por defecto) y se cierra con `POST /api/auth/salir`.
+5. `GET /api/auth/yo` devuelve la persona con sesión; toda ruta `/api/**` responde `401` sin sesión, excepto las del consumidor (`GET /api/salas/{token}`, `PATCH /api/salas/{token}/responder`) y `/signaling`.
+6. Para probar endpoints con Postman: ingrese en el navegador, copie el valor de la cookie `VC_SESION` y envíelo como cookie en la solicitud.
+
+URI de redirección registrados en Google Cloud: `http://localhost:8070/login/oauth2/code/google` y `http://localhost:4200/login/oauth2/code/google` (este último cuando se entra por el proxy de Angular).
+
 ## 10. Versionado
 
 - Versionado semántico `MAYOR.MENOR.PARCHE`, siempre sobre `main`.
