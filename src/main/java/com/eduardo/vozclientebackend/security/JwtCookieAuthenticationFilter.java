@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -81,7 +80,8 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Cuenta activa = cuenta.get();
-        List<GrantedAuthority> permisos = List.of(new SimpleGrantedAuthority("ROLE_" + activa.getRol().name()));
+        // Rol y permisos vigentes en la base de datos (matriz de PermisosPorRol).
+        List<GrantedAuthority> permisos = PermisosPorRol.autoridades(activa.getRol());
         DefaultOAuth2User principal = new DefaultOAuth2User(
             permisos,
             Map.of(

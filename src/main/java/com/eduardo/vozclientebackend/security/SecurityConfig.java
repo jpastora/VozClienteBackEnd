@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,12 +25,15 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
  *   <li>Sin sesión HTTP en el servidor: cada solicitud se autentica con la cookie.</li>
  *   <li>Toda ruta {@code /api/**} exige sesión, salvo las del consumidor, que entra sin cuenta (RF-08).</li>
  *   <li>Sin sesión, la API responde 401 (no redirige a Google); el front-end muestra el ingreso.</li>
+ *   <li>Cada endpoint exige su permiso con {@code @PreAuthorize}; sin permiso responde 403
+ *       (matriz en {@link PermisosPorRol}, RF-02).</li>
  * </ul>
  *
  * <p>CSRF queda deshabilitado porque la cookie es SameSite=Lax: el navegador no la envía en
  * solicitudes POST, PUT, PATCH ni DELETE que se originen en otros sitios.</p>
  */
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     /** Ruta para cerrar la sesión (RF-01: la sesión puede cerrarse manualmente). */
@@ -77,7 +81,10 @@ public class SecurityConfig {
                     registroGoogleService, jwtService, cookieSesionService, frontend))
                 .failureHandler(new GoogleLoginFailureHandler(frontend)))
             .exceptionHandling(errores -> errores
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                // Sin permiso: 403 sin cuerpo, para no revelar datos del recurso (RNF de seguridad).
+                .accessDeniedHandler((request, response, denegado) ->
+                    response.setStatus(HttpStatus.FORBIDDEN.value())))
             .logout(salir -> salir
                 .logoutUrl(RUTA_SALIR)
                 .addLogoutHandler((request, response, authentication) -> cookieSesionService.borrar(response))

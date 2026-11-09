@@ -223,6 +223,13 @@ Ejecución:
 5. `GET /api/auth/yo` devuelve la persona con sesión; toda ruta `/api/**` responde `401` sin sesión, excepto las del consumidor (`GET /api/salas/{token}`, `PATCH /api/salas/{token}/responder`) y `/signaling`.
 6. Para probar endpoints con Postman: ingrese en el navegador, copie el valor de la cookie `VC_SESION` y envíelo como cookie en la solicitud.
 
+### 9.2 Permisos por rol (RF-02)
+
+- La matriz vive en `security/PermisosPorRol.java`: es el único lugar donde se decide qué puede hacer cada rol.
+- Cada endpoint exige su permiso con `@PreAuthorize("hasAuthority('recurso:accion')")`; sin permiso responde `403`.
+- Al agregar un endpoint nuevo: use un permiso existente o agréguelo a la matriz. `PermisosPorRolTest` falla si un endpoint queda sin `@PreAuthorize` o usa un permiso que no existe.
+- Solo son públicos los endpoints del consumidor: `GET /api/salas/{token}` y `PATCH /api/salas/{token}/responder`.
+
 URI de redirección registrados en Google Cloud: `http://localhost:8070/login/oauth2/code/google` y `http://localhost:4200/login/oauth2/code/google` (este último cuando se entra por el proxy de Angular).
 
 ## 10. Versionado

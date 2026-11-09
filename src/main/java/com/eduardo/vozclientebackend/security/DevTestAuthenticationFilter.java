@@ -31,8 +31,14 @@ public class DevTestAuthenticationFilter extends OncePerRequestFilter {
         // Debe coincidir con google_sub en la base de datos.
         String googleSub = "dev-test-admin";
 
+        // Solo para pruebas locales: el usuario de pruebas recibe todos los permisos
+        // de PermisosPorRol para poder llamar cualquier endpoint protegido con @PreAuthorize.
+        List<SimpleGrantedAuthority> autoridades = new java.util.ArrayList<>();
+        autoridades.add(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"));
+        PermisosPorRol.todos().forEach(p -> autoridades.add(new SimpleGrantedAuthority(p)));
+
         OAuth2User usuario = new DefaultOAuth2User(
-            List.of(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR")),
+            autoridades,
             Map.of(
                 "sub", googleSub,
                 "name", "Administrador de pruebas"
