@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.CrearRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
 import com.eduardo.vozclientebackend.service.RepresentanteService;
@@ -23,6 +24,7 @@ public class RepresentanteController {
     /**
      * POST /api/representantes. Registra un representante.
      */
+    @PreAuthorize("hasAuthority('representante:gestionar')")
     @PostMapping
     public ResponseEntity<CuentaDTO> crearRepresentante(
         @Valid @RequestBody CrearRepresentanteDTO dto) {
@@ -38,6 +40,7 @@ public class RepresentanteController {
     /**
      * GET /api/representantes. Lista los representantes de la empresa autenticada.
      */
+    @PreAuthorize("hasAuthority('representante:gestionar')")
     @GetMapping
     public ResponseEntity<List<CuentaDTO>> listarRepresentantes() {
 
@@ -50,6 +53,7 @@ public class RepresentanteController {
     /**
      * GET /api/representantes/{id}. Obtiene los datos de un representante.
      */
+    @PreAuthorize("hasAuthority('representante:gestionar')")
     @GetMapping("/{id}")
     public ResponseEntity<CuentaDTO> obtenerRepresentante(
         @PathVariable Long id) {
@@ -63,6 +67,7 @@ public class RepresentanteController {
     /**
      * PATCH /api/representantes/{id}/desactivar. Desactiva un representante.
      */
+    @PreAuthorize("hasAuthority('representante:gestionar')")
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<CuentaDTO> desactivarRepresentante(
         @PathVariable Long id) {

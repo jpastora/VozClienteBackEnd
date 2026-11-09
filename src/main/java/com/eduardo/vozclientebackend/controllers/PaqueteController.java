@@ -1,6 +1,7 @@
 package com.eduardo.vozclientebackend.controllers;
 
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.PaqueteDTO;
 import com.eduardo.vozclientebackend.service.PaqueteService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class PaqueteController {
      * Crea un nuevo paquete.
      * Endpoint: POST /api/paquetes
      */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
     @PostMapping
     public ResponseEntity<PaqueteDTO> crearPaquete(@RequestBody PaqueteDTO paqueteDTO) {
         PaqueteDTO nuevoPaquete = paqueteService.crearPaquete(paqueteDTO);
@@ -31,6 +33,7 @@ public class PaqueteController {
      * Actualiza un paquete existente.
      * Endpoint: PUT /api/paquetes/{id}
      */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
     @PutMapping("/{id}")
     public ResponseEntity<PaqueteDTO> actualizarPaquete(@PathVariable Long id, @RequestBody PaqueteDTO paqueteDTO) {
         PaqueteDTO paqueteActualizado = paqueteService.actualizarPaquete(id, paqueteDTO);
@@ -42,6 +45,7 @@ public class PaqueteController {
      * Útil para un panel de administración.
      * Endpoint: GET /api/paquetes
      */
+    @PreAuthorize("hasAuthority('paquete:leer')")
     @GetMapping
     public ResponseEntity<List<PaqueteDTO>> obtenerTodos() {
         List<PaqueteDTO> paquetes = paqueteService.obtenerTodos();
@@ -53,6 +57,7 @@ public class PaqueteController {
      * Útil para mostrar en el catálogo a los clientes.
      * Endpoint: GET /api/paquetes/activos
      */
+    @PreAuthorize("hasAuthority('paquete:leer')")
     @GetMapping("/activos")
     public ResponseEntity<List<PaqueteDTO>> obtenerActivos() {
         List<PaqueteDTO> paquetes = paqueteService.obtenerActivos();
@@ -63,6 +68,7 @@ public class PaqueteController {
      * Obtiene un paquete específico por su ID.
      * Endpoint: GET /api/paquetes/{id}
      */
+    @PreAuthorize("hasAuthority('paquete:leer')")
     @GetMapping("/{id}")
     public ResponseEntity<PaqueteDTO> obtenerPorId(@PathVariable Long id) {
         PaqueteDTO paquete = paqueteService.obtenerPorId(id);
@@ -73,6 +79,7 @@ public class PaqueteController {
      * Obtiene un paquete específico por su nombre.
      * Endpoint: GET /api/paquetes/nombre/{nombre}
      */
+    @PreAuthorize("hasAuthority('paquete:leer')")
     @GetMapping("/nombre/{nombre}")
     public ResponseEntity<PaqueteDTO> obtenerPorNombre(@PathVariable String nombre) {
         PaqueteDTO paquete = paqueteService.obtenerPorNombre(nombre);
@@ -83,6 +90,7 @@ public class PaqueteController {
      * Desactiva un paquete (Soft Delete).
      * Endpoint: PATCH /api/paquetes/{id}/desactivar
      */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<Void> desactivarPaquete(@PathVariable Long id) {
         paqueteService.desactivarPaquete(id);
@@ -93,6 +101,7 @@ public class PaqueteController {
      * Elimina físicamente un paquete.
      * Endpoint: DELETE /api/paquetes/{id}
      */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarPaquete(@PathVariable Long id) {
         paqueteService.eliminarPaquete(id);

@@ -1,6 +1,7 @@
 package com.eduardo.vozclientebackend.controllers;
 
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.SalaDTO;
 import com.eduardo.vozclientebackend.service.SalaService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class SalaController {
      * POST /api/salas
      * Crea una nueva sala. El token y las fechas se generan automáticamente en el servicio.
      */
+    @PreAuthorize("hasAuthority('sala:crear')")
     @PostMapping
     public ResponseEntity<SalaDTO> crearSala(@RequestBody SalaDTO salaDTO) {
         SalaDTO nuevaSala = salaService.crearSala(salaDTO);
@@ -41,6 +43,7 @@ public class SalaController {
      * GET /api/salas/producto/{productoId}
      * Lista todas las salas asociadas a un producto.
      */
+    @PreAuthorize("hasAuthority('sala:leer')")
     @GetMapping("/producto/{productoId}")
     public ResponseEntity<List<SalaDTO>> obtenerPorProducto(@PathVariable Long productoId) {
         List<SalaDTO> salas = salaService.obtenerPorProducto(productoId);
