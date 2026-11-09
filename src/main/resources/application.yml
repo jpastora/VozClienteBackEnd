@@ -1,0 +1,68 @@
+server:
+  port: 8070
+
+spring:
+  application:
+    name: VozClienteBackEnd
+  datasource:
+    url: jdbc:postgresql://postgres-db:5432/voz_cliente_db
+    username: postgres
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  docker:
+    compose:
+      file: docker/docker-compose.yml
+
+  # Ingreso con Google (HU-01). Las credenciales vienen del archivo .env (ver docker/.env.example).
+  # Los valores "sin-configurar" solo permiten que la aplicación arranque sin credenciales;
+  # el ingreso con Google funcionará cuando se configuren las reales.
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:sin-configurar}
+            client-secret: ${GOOGLE_CLIENT_SECRET:sin-configurar}
+            scope: openid, profile, email
+
+  # LA CONFIGURACIÓN DE IA VA AQUÍ, DENTRO DE "spring:"
+  ai:
+    retry:
+      max-attempts: 5
+      backoff:
+        initial-interval: 2000ms
+        multiplier: 2.0
+        max-interval: 10000ms
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY} # Lee la variable de entorno
+        chat:
+          options:
+            model: gemini-3.8-flash
+
+# WHISPER VA AL MISMO NIVEL QUE SPRING Y SERVER
+whisper:
+  api:
+    url: ${WHISPER_API_URL:http://localhost:8000/transcribir}
+
+app:
+  # A dónde vuelve el usuario después de ingresar con Google.
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:4200}
+  seguridad:
+    # Secreto de firma del JWT de la sesión: mínimo 32 caracteres. Si falta, se genera uno
+    # aleatorio y las sesiones se cierran al reiniciar el back-end.
+    jwt-secreto: ${JWT_SECRET:}
+    # La sesión expira tras estos minutos sin actividad (RF-01).
+    minutos-inactividad: ${APP_MINUTOS_INACTIVIDAD:30}
+    # true cuando se sirve por HTTPS (por ejemplo con ngrok): la cookie solo viaja por HTTPS.
+    cookie-segura: ${APP_COOKIE_SEGURA:false}
+  storage:
+    grabaciones:
+      path: ${APP_STORAGE_GRABACIONES_PATH:./uploads/grabaciones}
