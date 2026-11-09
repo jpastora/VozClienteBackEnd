@@ -33,7 +33,9 @@ public class GrabacionService {
 
     // Ruta donde se guardarán los archivos .webm (puedes configurarlo en application.properties)
     // Ejemplo: app.storage.grabaciones.path=/var/data/grabaciones
-    @Value("${GRABACIONES_RUTA:./uploads}")
+    // Se lee de app.storage.grabaciones.path (variable APP_STORAGE_GRABACIONES_PATH): en Docker es
+    // /app/grabaciones, la única carpeta con permiso de escritura para el usuario del contenedor.
+    @Value("${app.storage.grabaciones.path:./uploads/grabaciones}")
     private String baseStoragePath;
 
     @PostConstruct
