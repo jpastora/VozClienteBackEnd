@@ -1,3 +1,4 @@
+
 package com.eduardo.vozclientebackend.repository;
 
 import com.eduardo.vozclientebackend.models.Producto;
@@ -20,26 +21,30 @@ public interface ProductoRepository
         Long empresaId
     );
 
-    List<Producto> findByEmpresaId(Long empresaId);
+    List<Producto> findByEmpresaId(
+        Long empresaId
+    );
 
     List<Producto> findByEmpresaIdAndEsActivoTrue(
         Long empresaId
     );
 
+    // Listado paginado con filtros opcionales
+    // por nombre y estado.
     @Query("""
-    SELECT p
-    FROM Producto p
-    WHERE p.empresaId = :empresaId
-      AND (
-          :nombre IS NULL
-          OR LOWER(p.nombre) LIKE
-             LOWER(CONCAT('%', :nombre, '%'))
-      )
-      AND (
-          :estado IS NULL
-          OR p.esActivo = :estado
-      )
-    """)
+        SELECT p
+        FROM Producto p
+        WHERE p.empresaId = :empresaId
+          AND (
+              :nombre IS NULL
+              OR LOWER(p.nombre) LIKE
+                 CONCAT('%', LOWER(CAST(:nombre AS String)), '%')
+          )
+          AND (
+              :estado IS NULL
+              OR p.esActivo = :estado
+          )
+        """)
     Page<Producto> buscarProductos(
         @Param("empresaId") Long empresaId,
         @Param("nombre") String nombre,
@@ -47,12 +52,17 @@ public interface ProductoRepository
         Pageable pageable
     );
 
+    // Validar nombres duplicados dentro de la empresa.
+    // Permite excluir el producto actual al editar.
     @Query("""
         SELECT COUNT(p) > 0
         FROM Producto p
         WHERE p.empresaId = :empresaId
           AND LOWER(p.nombre) = LOWER(:nombre)
-          AND (:excluirId IS NULL OR p.id <> :excluirId)
+          AND (
+              :excluirId IS NULL
+              OR p.id <> :excluirId
+          )
         """)
     boolean existeNombreEnEmpresa(
         @Param("empresaId") Long empresaId,
