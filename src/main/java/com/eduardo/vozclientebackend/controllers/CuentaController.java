@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.CambioRolDTO;
 import com.eduardo.vozclientebackend.dto.CambiarRolRequestDTO;
 import com.eduardo.vozclientebackend.dto.CrearAdministradorDTO;
@@ -26,6 +27,7 @@ public class CuentaController {
     /**
      * POST /api/cuentas. Crea una cuenta de cliente administrador pendiente.
      */
+    @PreAuthorize("hasAuthority('cuenta:gestionar')")
     @PostMapping
     public ResponseEntity<CuentaDTO> crearCuenta(
         @Valid @RequestBody CrearAdministradorDTO dto) {
@@ -40,6 +42,7 @@ public class CuentaController {
     /**
      * GET /api/cuentas. Lista las cuentas de la empresa.
      */
+    @PreAuthorize("hasAuthority('cuenta:gestionar')")
     @GetMapping
     public ResponseEntity<List<CuentaDTO>> listarCuentas() {
 
@@ -51,6 +54,7 @@ public class CuentaController {
     /**
      * PATCH /api/cuentas/{id}/rol. Cambia el rol de una cuenta.
      */
+    @PreAuthorize("hasAuthority('cuenta:gestionar')")
     @PatchMapping("/{id}/rol")
     public ResponseEntity<CuentaDTO> cambiarRol(
         @PathVariable Long id,
@@ -65,6 +69,7 @@ public class CuentaController {
     /**
      * GET /api/cuentas/{id}/cambios-rol. Consulta el historial de cambios de rol.
      */
+    @PreAuthorize("hasAuthority('cuenta:gestionar')")
     @GetMapping("/{id}/cambios-rol")
     public ResponseEntity<List<CambioRolDTO>> obtenerHistorial(
         @PathVariable Long id) {

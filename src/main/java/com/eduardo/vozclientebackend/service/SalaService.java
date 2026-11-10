@@ -13,13 +13,23 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class SalaService {
+
+    /** Días de vigencia de un enlace de sala (RNF-04). */
+    private static final int DIAS_VIGENCIA_ENLACE = 7;
+
+    /** Bytes aleatorios del token: 32 bytes = 256 bits. */
+    private static final int BYTES_TOKEN = 32;
+
+    private static final SecureRandom GENERADOR_SEGURO = new SecureRandom();
 
     private final SalaRepository salaRepository;
     private final CuentaRepository cuentaRepository;
@@ -60,12 +70,13 @@ public class SalaService {
         // 4. Generar token y fechas
         sala.setToken(generarTokenUnico());
         sala.setEstado(EstadoSala.PENDIENTE);
-        OffsetDateTime ahora = OffsetDateTime.now();
+        // Precisión de microsegundos, igual que TIMESTAMPTZ en PostgreSQL.
+        OffsetDateTime ahora = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
         sala.setEmitidaEn(ahora);
 
-        if (sala.getVenceEn() == null) {
-            sala.setVenceEn(ahora.plusDays(7));
-        }
+        // El vencimiento siempre es la emisión más 7 días (RNF-04, ck_salas_vencimiento);
+        // se ignora cualquier valor que venga en el DTO.
+        sala.setVenceEn(ahora.plusDays(DIAS_VIGENCIA_ENLACE));
 
         Sala salaGuardada = salaRepository.save(sala);
         return salaMapper.toDto(salaGuardada);
@@ -122,8 +133,10 @@ public class SalaService {
     private String generarTokenUnico() {
         String token;
         do {
-            // Genera un token aleatorio, quitando los guiones del UUID
-            token = UUID.randomUUID().toString().replace("-", "");
+            // 256 bits aleatorios en Base64URL sin relleno: 43 caracteres, no adivinable (diccionario SAL-04).
+            byte[] bytes = new byte[BYTES_TOKEN];
+            GENERADOR_SEGURO.nextBytes(bytes);
+            token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         } while (salaRepository.existsByToken(token)); // Asegura que no exista ya en la BD
         return token;
     }

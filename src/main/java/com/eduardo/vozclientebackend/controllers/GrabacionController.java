@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.GrabacionDTO;
 import com.eduardo.vozclientebackend.service.GrabacionService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class GrabacionController {
      * Endpoint para subir el archivo .webm generado por WebRTC.
      * Al recibir un archivo físico, el Content-Type debe ser 'multipart/form-data'.
      */
+    @PreAuthorize("hasAuthority('grabacion:subir')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<GrabacionDTO> subirGrabacion(
         @RequestParam("entrevistaId") Long entrevistaId,
@@ -41,6 +43,7 @@ public class GrabacionController {
     /**
      * Obtiene los metadatos de la grabación asociada a una entrevista.
      */
+    @PreAuthorize("hasAuthority('grabacion:leer')")
     @GetMapping("/entrevista/{entrevistaId}")
     public ResponseEntity<GrabacionDTO> obtenerPorEntrevistaId(@PathVariable Long entrevistaId) {
         GrabacionDTO grabacion = grabacionService.obtenerPorEntrevistaId(entrevistaId);

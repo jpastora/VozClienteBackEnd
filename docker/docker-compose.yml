@@ -64,12 +64,15 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - WHISPER_API_URL=http://whisper-api:8000/transcribir
       - APP_STORAGE_GRABACIONES_PATH=/app/grabaciones
+      # Ingreso con Google y sesión (HU-01). Valores en docker/.env (ver .env.example).
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-sin-configurar}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-sin-configurar}
+      - JWT_SECRET=${JWT_SECRET:-}
+      - APP_FRONTEND_URL=${APP_FRONTEND_URL:-http://localhost:4200}
+      - APP_COOKIE_SEGURA=${APP_COOKIE_SEGURA:-false}
       # Pendientes de definir (descomentar cuando estén listas):
       # - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-dev}
-      # - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      # - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       # - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      # - JWT_SECRET=${JWT_SECRET}
     volumes:
       - grabaciones_data:/app/grabaciones
     restart: unless-stopped
