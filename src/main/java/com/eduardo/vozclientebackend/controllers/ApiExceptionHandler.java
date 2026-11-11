@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.eduardo.vozclientebackend.exceptions.ProductoDuplicadoException;
+
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
@@ -66,4 +68,24 @@ public class ApiExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(respuesta);
     }
+
+
+    @ExceptionHandler(ProductoDuplicadoException.class)
+    public ResponseEntity<Map<String, Object>> manejarDuplicado(
+        ProductoDuplicadoException ex) {
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> manejarArgumento(
+        IllegalArgumentException ex) {
+
+        return ResponseEntity
+            .badRequest()
+            .body(Map.of("mensaje", ex.getMessage()));
+    }
+
 }
