@@ -16,4 +16,7 @@ public interface TranscripcionRepository extends JpaRepository<Transcripcion, Lo
     boolean existsByGrabacionId(Long grabacionId);
 
     List<Transcripcion> findByEstado(EstadoTranscripcion estado);
+
+    List<Transcripcion> findByGrabacionIdIn(List<Long> grabacionIds);
+
 }

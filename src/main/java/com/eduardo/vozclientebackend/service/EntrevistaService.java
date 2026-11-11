@@ -15,12 +15,40 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import java.util.Locale;
+
+import com.eduardo.vozclientebackend.dto.EntrevistaListadoDTO;
+import com.eduardo.vozclientebackend.models.*;
+import com.eduardo.vozclientebackend.repository.*;
+import com.eduardo.vozclientebackend.enums.EstadoTranscripcion;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import com.eduardo.vozclientebackend.enums.EstadoAnalisis;
+
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+
 @Service
 @RequiredArgsConstructor
 public class EntrevistaService {
 
     private final EntrevistaRepository entrevistaRepository;
     private final EntrevistaMapper entrevistaMapper;
+    private final UsuarioActualService usuarioActualService;
+
+    private final ProductoRepository productoRepository;
+    private final GrabacionRepository grabacionRepository;
+    private final TranscripcionRepository transcripcionRepository;
+    private final AnalisisRepository analisisRepository;
 
     // Inyectamos los repositorios para las validaciones
     private final SalaRepository salaRepository;
@@ -130,4 +158,240 @@ public class EntrevistaService {
         return entrevistaRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Entrevista no encontrada con el ID: " + id));
     }
+
+    @Transactional(readOnly = true)
+    public Page<EntrevistaDTO> listarEntrevistas(
+        int page,
+        Long productoId,
+        String estado) {
+
+        if (page < 0) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "La página no puede ser negativa");
+        }
+
+        Long empresaId = usuarioActualService
+            .obtenerCuentaActual()
+            .getEmpresaId();
+
+        if (empresaId == null) {
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "El usuario no tiene empresa asignada");
+        }
+
+        EstadoEntrevista filtroEstado = null;
+
+        if (estado != null && !estado.isBlank()) {
+            try {
+                filtroEstado = EstadoEntrevista.valueOf(
+                    estado.trim()
+                        .toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Estado de entrevista inválido");
+            }
+        }
+
+        PageRequest pageable = PageRequest.of(
+            page,
+            10,
+            Sort.by(
+                Sort.Order.desc("inicioEn"),
+                Sort.Order.desc("id")
+            )
+        );
+
+        return entrevistaRepository.buscarEntrevistas(
+            empresaId,
+            productoId,
+            filtroEstado,
+            pageable
+        ).map(entrevistaMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EntrevistaListadoDTO> listarEntrevistasDetalladas(
+        int page,
+        Long productoId,
+        String estado) {
+
+        if (page < 0) {
+            throw new IllegalArgumentException(
+                "La página no puede ser negativa");
+        }
+
+        Long empresaId = usuarioActualService
+            .obtenerCuentaActual()
+            .getEmpresaId();
+
+        if (empresaId == null) {
+            throw new IllegalStateException(
+                "El usuario no tiene empresa asignada");
+        }
+
+        EstadoEntrevista filtroEstado = null;
+
+        if (estado != null && !estado.isBlank()) {
+            try {
+                filtroEstado = EstadoEntrevista.valueOf(
+                    estado.trim().toUpperCase(
+                        java.util.Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException(
+                    "Estado de entrevista inválido");
+            }
+        }
+
+        PageRequest pageable = PageRequest.of(
+            page, 10,
+            Sort.by(
+                Sort.Order.desc("inicioEn"),
+                Sort.Order.desc("id"))
+        );
+
+        Page<Entrevista> pagina =
+            entrevistaRepository.buscarEntrevistas(
+                empresaId,
+                productoId,
+                filtroEstado,
+                pageable);
+
+        List<Entrevista> entrevistas = pagina.getContent();
+
+        if (entrevistas.isEmpty()) {
+            return pagina.map(e -> {
+                throw new IllegalStateException(
+                    "No debería mapear una página vacía");
+            });
+        }
+
+        List<Long> salaIds = entrevistas.stream()
+            .map(Entrevista::getSalaId)
+            .distinct()
+            .toList();
+
+        Map<Long, Sala> salas = salaRepository
+            .findAllById(salaIds).stream()
+            .collect(Collectors.toMap(
+                Sala::getId, Function.identity()));
+
+        List<Long> productoIds = salas.values().stream()
+            .map(Sala::getProductoId)
+            .distinct()
+            .toList();
+
+        Map<Long, Producto> productos = productoRepository
+            .findAllById(productoIds).stream()
+            .collect(Collectors.toMap(
+                Producto::getId, Function.identity()));
+
+        List<Long> representanteIds = entrevistas.stream()
+            .map(Entrevista::getRepresentanteId)
+            .distinct()
+            .toList();
+
+        Map<Long, Cuenta> representantes = cuentaRepository
+            .findAllById(representanteIds).stream()
+            .collect(Collectors.toMap(
+                Cuenta::getId, Function.identity()));
+
+        List<Long> entrevistaIds = entrevistas.stream()
+            .map(Entrevista::getId)
+            .toList();
+
+        Map<Long, Grabacion> grabaciones = grabacionRepository
+            .findByEntrevistaIdIn(entrevistaIds)
+            .stream()
+            .collect(Collectors.toMap(
+                Grabacion::getEntrevistaId,
+                Function.identity()));
+
+        List<Long> grabacionIds = grabaciones.values()
+            .stream()
+            .map(Grabacion::getId)
+            .toList();
+
+        Map<Long, Transcripcion> transcripciones =
+            grabacionIds.isEmpty()
+                ? Map.of()
+                : transcripcionRepository
+                .findByGrabacionIdIn(grabacionIds)
+                .stream()
+                .collect(Collectors.toMap(
+                    Transcripcion::getGrabacionId,
+                    Function.identity()));
+
+        List<Long> transcripcionIds = transcripciones
+            .values().stream()
+            .map(Transcripcion::getId)
+            .toList();
+
+        Map<Long, Analisis> analisis =
+            transcripcionIds.isEmpty()
+                ? Map.of()
+                : analisisRepository
+                .findByTranscripcionIdIn(
+                    transcripcionIds)
+                .stream()
+                .collect(Collectors.toMap(
+                    Analisis::getTranscripcionId,
+                    Function.identity()));
+
+        return pagina.map(entrevista -> {
+            Sala sala = salas.get(entrevista.getSalaId());
+
+            Producto producto = sala == null
+                ? null
+                : productos.get(sala.getProductoId());
+
+            Cuenta representante = representantes.get(
+                entrevista.getRepresentanteId());
+
+            Grabacion grabacion = grabaciones.get(
+                entrevista.getId());
+
+            Transcripcion transcripcion = grabacion == null
+                ? null
+                : transcripciones.get(grabacion.getId());
+
+            Analisis analisisActual = transcripcion == null
+                ? null
+                : analisis.get(transcripcion.getId());
+
+            boolean puedeReintentar =
+                transcripcion != null
+                    && transcripcion.getEstado()
+                    == EstadoTranscripcion.CON_ERROR;
+
+            return new EntrevistaListadoDTO(
+                entrevista.getId(),
+                entrevista.getSalaId(),
+                sala == null ? null : sala.getProductoId(),
+                producto == null ? null : producto.getNombre(),
+                sala == null ? null : sala.getNombreConsumidor(),
+                entrevista.getRepresentanteId(),
+                representante == null
+                    ? null
+                    : representante.getNombreCompleto(),
+                entrevista.getEstado(),
+                entrevista.getInicioEn(),
+                entrevista.getFinEn(),
+                entrevista.getDuracionSegundos(),
+                grabacion == null ? null : grabacion.getId(),
+                transcripcion == null
+                    ? null : transcripcion.getId(),
+                transcripcion == null
+                    ? null : transcripcion.getEstado(),
+                analisisActual == null
+                    ? null : analisisActual.getId(),
+                analisisActual == null
+                    ? null : analisisActual.getEstado(),
+                puedeReintentar
+            );
+        });
+    }
+
 }

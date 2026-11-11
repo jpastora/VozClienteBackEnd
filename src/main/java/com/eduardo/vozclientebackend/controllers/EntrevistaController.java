@@ -10,12 +10,23 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+
+import com.eduardo.vozclientebackend.dto.EntrevistaListadoDTO;
+import org.springframework.data.domain.Page;
+
+import com.eduardo.vozclientebackend.dto.EntrevistaDetalleDTO;
+import com.eduardo.vozclientebackend.service.EntrevistaDetalleService;
+
+
 @RestController
 @RequestMapping("/api/entrevistas")
 @RequiredArgsConstructor
 public class EntrevistaController {
 
     private final EntrevistaService entrevistaService;
+    private final EntrevistaDetalleService entrevistaDetalleService;
+
 
     /**
      * POST /api/entrevistas
@@ -84,4 +95,44 @@ public class EntrevistaController {
         EntrevistaDTO entrevistaFallida = entrevistaService.reportarFallo(id);
         return ResponseEntity.ok(entrevistaFallida);
     }
+
+    @PreAuthorize("hasAuthority('entrevista:leer')")
+    @GetMapping
+    public ResponseEntity<Page<EntrevistaDTO>> listarEntrevistas(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(required = false) Long productoId,
+        @RequestParam(required = false) String estado) {
+
+        return ResponseEntity.ok(
+            entrevistaService.listarEntrevistas(
+                page,
+                productoId,
+                estado
+            )
+        );
+    }
+
+    @PreAuthorize("hasAuthority('entrevista:leer')")
+    @GetMapping("/listado")
+    public ResponseEntity<Page<EntrevistaListadoDTO>>
+    listarEntrevistasDetalladas(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(required = false) Long productoId,
+        @RequestParam(required = false) String estado) {
+
+        return ResponseEntity.ok(
+            entrevistaService.listarEntrevistasDetalladas(
+                page, productoId, estado));
+    }
+
+    @PreAuthorize("hasAuthority('entrevista:leer')")
+    @GetMapping("/{id}/detalle")
+    public ResponseEntity<EntrevistaDetalleDTO> obtenerDetalle(
+        @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+            entrevistaDetalleService.obtenerDetalle(id)
+        );
+    }
+
 }
