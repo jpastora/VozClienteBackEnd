@@ -64,6 +64,12 @@ public final class PermisosPorRol {
     /** Administrar empresas. */
     public static final String EMPRESA_GESTIONAR = "empresa:gestionar";
 
+    public static final String GUIA_LEER = "guia:leer";
+
+    public static final String GUIA_CREAR = "guia:crear";
+
+    public static final String GUIA_GESTIONAR = "guia:gestionar";
+
     private static final Map<RolCuenta, Set<String>> PERMISOS = new EnumMap<>(RolCuenta.class);
 
     static {
@@ -75,12 +81,12 @@ public final class PermisosPorRol {
             GRABACION_LEER, GRABACION_SUBIR,
             TRANSCRIPCION_LEER, TRANSCRIPCION_GESTIONAR,
             PAQUETE_LEER,
-            COMPRA_LEER, COMPRA_CREAR));
+            COMPRA_LEER, COMPRA_CREAR, GUIA_LEER, GUIA_CREAR, GUIA_GESTIONAR));
 
         PERMISOS.put(RolCuenta.REPRESENTANTE, Set.of(
             PRODUCTO_LEER,
-            SALA_LEER,
-            ENTREVISTA_LEER, ENTREVISTA_GESTIONAR,
+            SALA_LEER, SALA_CREAR,
+            ENTREVISTA_LEER, ENTREVISTA_GESTIONAR, GUIA_LEER,
             GRABACION_SUBIR));
 
         PERMISOS.put(RolCuenta.ADMINISTRADOR, Set.of(

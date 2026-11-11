@@ -50,7 +50,7 @@ public class RepresentanteService {
         representante.setNombreCompleto(dto.nombreCompleto().trim());
         representante.setCorreo(correo);
         representante.setRol(RolCuenta.REPRESENTANTE);
-        representante.setEstado(EstadoCuenta.PENDIENTE);
+        representante.setEstado(EstadoCuenta.ACTIVA);
 
         // El representante vinculará Google al iniciar sesión.
         representante.setGoogleSub(null);
