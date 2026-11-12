@@ -85,8 +85,8 @@ public final class PermisosPorRol {
 
         PERMISOS.put(RolCuenta.REPRESENTANTE, Set.of(
             PRODUCTO_LEER,
-            SALA_LEER,
-            ENTREVISTA_LEER, ENTREVISTA_GESTIONAR,
+            SALA_LEER, SALA_CREAR,
+            ENTREVISTA_LEER, ENTREVISTA_GESTIONAR, GUIA_LEER,
             GRABACION_SUBIR));
 
         PERMISOS.put(RolCuenta.ADMINISTRADOR, Set.of(
