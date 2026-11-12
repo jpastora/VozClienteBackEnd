@@ -3,12 +3,14 @@ package com.eduardo.vozclientebackend.security;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Reglas de las contraseñas propias de la aplicación.
  *
  * <ul>
- *   <li>Entre 8 y 72 caracteres (72 bytes es el máximo que procesa BCrypt).</li>
- *   <li>Al menos una letra y un número.</li>
+ *   <li>Entre 8 y 20 caracteres.</li>
+ *   <li>Al menos una mayúscula, una minúscula y un número.</li>
  * </ul>
  */
 public final class PoliticaContrasena {
@@ -16,12 +18,15 @@ public final class PoliticaContrasena {
     /** Largo mínimo de la contraseña. */
     public static final int LARGO_MINIMO = 8;
 
-    /** Largo máximo de la contraseña (límite de BCrypt). */
-    public static final int LARGO_MAXIMO = 72;
+    /** Largo máximo de la contraseña. */
+    public static final int LARGO_MAXIMO = 20;
+
+    /** Máximo de bytes que procesa BCrypt; con 20 caracteres solo se alcanza con símbolos poco comunes. */
+    private static final int BYTES_MAXIMOS_BCRYPT = 72;
 
     /** Mensaje con las reglas, para mostrar al usuario. */
     public static final String MENSAJE =
-        "La contraseña debe tener entre 8 y 72 caracteres, con al menos una letra y un número";
+        "La contraseña debe tener entre 8 y 20 caracteres, con al menos una mayúscula, una minúscula y un número";
 
     private PoliticaContrasena() {
     }
@@ -47,11 +52,13 @@ public final class PoliticaContrasena {
     public static boolean cumple(String contrasena) {
         if (contrasena == null
             || contrasena.length() < LARGO_MINIMO
-            || contrasena.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > LARGO_MAXIMO) {
+            || contrasena.length() > LARGO_MAXIMO
+            || contrasena.getBytes(StandardCharsets.UTF_8).length > BYTES_MAXIMOS_BCRYPT) {
             return false;
         }
-        boolean tieneLetra = contrasena.chars().anyMatch(Character::isLetter);
+        boolean tieneMayuscula = contrasena.chars().anyMatch(Character::isUpperCase);
+        boolean tieneMinuscula = contrasena.chars().anyMatch(Character::isLowerCase);
         boolean tieneNumero = contrasena.chars().anyMatch(Character::isDigit);
-        return tieneLetra && tieneNumero;
+        return tieneMayuscula && tieneMinuscula && tieneNumero;
     }
 }

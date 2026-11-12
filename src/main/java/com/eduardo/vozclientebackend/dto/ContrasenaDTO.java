@@ -12,7 +12,7 @@ import jakarta.validation.constraints.Size;
 public record ContrasenaDTO(
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres")
+    @Size(min = 8, max = 20, message = "La contraseña debe tener entre 8 y 20 caracteres")
     String contrasena
 
 ) {

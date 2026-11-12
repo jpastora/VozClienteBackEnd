@@ -170,6 +170,20 @@ class CredencialesServiceTest {
     }
 
     @Test
+    void registrar_contrasenaSinMayuscula_responde400() {
+        assertThatThrownBy(() -> servicio.registrar(new RegistroDTO("Luis", "luis@tienda.com", "clave2026")))
+            .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.BAD_REQUEST));
+        verify(cuentaRepository, never()).save(any());
+    }
+
+    @Test
+    void registrar_contrasenaDeMasDe20Caracteres_responde400() {
+        assertThatThrownBy(() -> servicio.registrar(
+                new RegistroDTO("Luis", "luis@tienda.com", "Clave2026Clave2026Clave")))
+            .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.BAD_REQUEST));
+    }
+
+    @Test
     void cifrar_contrasenaValida_devuelveUnHashBCrypt() {
         String hash = servicio.cifrar("Clave2026");
 

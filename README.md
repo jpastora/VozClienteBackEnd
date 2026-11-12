@@ -228,7 +228,7 @@ Ejecución:
 - Además de Google, se puede ingresar con correo y contraseña propios de la aplicación: `POST /api/auth/ingresar` con `{ correo, contrasena }`.
 - `POST /api/auth/registro` con `{ nombreCompleto, correo, contrasena }` crea la empresa y la cuenta como cliente-administrador, igual que el primer ingreso con Google. No toma correos que ya existen.
 - Representantes sin Google: el cliente-administrador les asigna una contraseña al crearlos (campo opcional `contrasena` en `POST /api/representantes`) o después, con `PATCH /api/representantes/{id}/contrasena`.
-- Las contraseñas se guardan solo como hash BCrypt (columna `cuentas.contrasena_hash`, migración V7). Deben tener entre 8 y 72 caracteres, con al menos una letra y un número.
+- Las contraseñas se guardan solo como hash BCrypt (columna `cuentas.contrasena_hash`, migración V7). Deben tener entre 8 y 20 caracteres, con al menos una mayúscula, una minúscula y un número. El nombre completo solo admite letras (con tildes) y espacios.
 - Correo inexistente y contraseña incorrecta responden el mismo `401`, para no revelar qué correos están registrados. Ambos ingresos dejan la misma cookie de sesión `VC_SESION`.
 
 ### 9.2 Permisos por rol (RF-02)
