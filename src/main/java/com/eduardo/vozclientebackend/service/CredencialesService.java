@@ -8,6 +8,7 @@ import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.models.Empresa;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.EmpresaRepository;
+import com.eduardo.vozclientebackend.security.LimiteIntentosIngreso;
 import com.eduardo.vozclientebackend.security.PoliticaContrasena;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ import java.util.Optional;
  *   <li>La contraseña nunca se guarda en texto plano: solo su hash BCrypt.</li>
  *   <li>Un correo o una contraseña incorrectos responden el mismo mensaje, para no revelar qué
  *       correos existen.</li>
+ *   <li>Después de varios intentos fallidos con el mismo correo, el ingreso se bloquea un tiempo
+ *       ({@link LimiteIntentosIngreso}).</li>
  *   <li>El registro crea la empresa y la cuenta como cliente-administrador. No toma cuentas que ya
  *       existen (por ejemplo, un representante registrado por su empresa): esa persona ingresa con
  *       Google.</li>
@@ -51,6 +54,7 @@ public class CredencialesService {
     private final CuentaRepository cuentaRepository;
     private final EmpresaRepository empresaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LimiteIntentosIngreso limiteIntentos;
     private final Clock reloj;
 
     /**
@@ -59,22 +63,30 @@ public class CredencialesService {
      * @param datos correo y contraseña
      * @return la cuenta activa
      * @throws ResponseStatusException 401 si el correo o la contraseña no son válidos;
-     *                                 403 si la cuenta está inactiva
+     *                                 403 si la cuenta está inactiva;
+     *                                 429 si hubo demasiados intentos fallidos con ese correo
      */
     @Transactional
     public Cuenta ingresar(IngresoDTO datos) {
-        Optional<Cuenta> encontrada = cuentaRepository.buscarPorCorreo(normalizar(datos.correo()));
+        String correo = normalizar(datos.correo());
+        // Si el correo está bloqueado no se revisa la contraseña: así no se puede seguir probando.
+        limiteIntentos.verificar(correo);
+
+        Optional<Cuenta> encontrada = cuentaRepository.buscarPorCorreo(correo);
         String hash = encontrada.map(Cuenta::getContrasenaHash).orElse(null);
 
         if (hash == null) {
             // Se compara igual contra un hash ficticio para que la respuesta tarde lo mismo exista o no
             // el correo, y así no se pueda averiguar qué correos están registrados.
             passwordEncoder.matches(datos.contrasena(), HASH_FICTICIO);
+            limiteIntentos.registrarFallo(correo);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, CREDENCIALES_INVALIDAS);
         }
         if (!passwordEncoder.matches(datos.contrasena(), hash)) {
+            limiteIntentos.registrarFallo(correo);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, CREDENCIALES_INVALIDAS);
         }
+        limiteIntentos.registrarExito(correo);
 
         Cuenta cuenta = encontrada.get();
         if (cuenta.getEstado() == EstadoCuenta.INACTIVA) {

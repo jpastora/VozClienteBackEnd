@@ -26,6 +26,10 @@ import java.util.Optional;
  *   <li>Si la cuenta ya está vinculada a ese usuario de Google, actualiza su último ingreso.</li>
  *   <li>Si el correo ya existe sin vincular (por ejemplo, un representante creado con RF-03),
  *       vincula la cuenta y la activa.</li>
+ *   <li>Si esa cuenta sin vincular tenía contraseña, la contraseña se borra: Google acaba de
+ *       confirmar quién es el dueño del correo, pero no se sabe quién creó esa contraseña (el
+ *       registro con contraseña todavía no verifica el correo). Así nadie que haya registrado un
+ *       correo ajeno conserva el acceso. Desde ese momento la cuenta ingresa con Google.</li>
  *   <li>Si es el primer ingreso, crea la empresa y la cuenta como cliente-administrador.</li>
  * </ul>
  */
@@ -91,7 +95,10 @@ public class RegistroGoogleService {
             if (cuenta.getGoogleSub() != null && !cuenta.getGoogleSub().equals(googleSub)) {
                 throw new IngresoRechazadoException(Motivo.CUENTA_VINCULADA_A_OTRO);
             }
-            cuenta.setGoogleSub(googleSub);
+            if (cuenta.getGoogleSub() == null) {
+                cuenta.setGoogleSub(googleSub);
+                cuenta.setContrasenaHash(null);
+            }
         });
         return porCorreo;
     }

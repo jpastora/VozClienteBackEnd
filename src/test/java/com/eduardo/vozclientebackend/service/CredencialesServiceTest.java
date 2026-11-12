@@ -8,6 +8,7 @@ import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.models.Empresa;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.EmpresaRepository;
+import com.eduardo.vozclientebackend.security.LimiteIntentosIngreso;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,8 +52,9 @@ class CredencialesServiceTest {
 
     @BeforeEach
     void preparar() {
+        Clock reloj = Clock.fixed(AHORA, ZoneOffset.UTC);
         servicio = new CredencialesService(cuentaRepository, empresaRepository, encoder,
-            Clock.fixed(AHORA, ZoneOffset.UTC));
+            new LimiteIntentosIngreso(reloj), reloj);
     }
 
     private Cuenta cuentaConContrasena(String contrasena, EstadoCuenta estado) {
@@ -130,6 +132,32 @@ class CredencialesServiceTest {
         assertThatThrownBy(() -> servicio.ingresar(new IngresoDTO("ana@empresa.com", "Clave2026")))
             .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.FORBIDDEN));
         verify(cuentaRepository, never()).save(any());
+    }
+
+    @Test
+    void ingresar_variosFallosSeguidos_bloqueaAunqueLaContrasenaSeaCorrecta() {
+        when(cuentaRepository.buscarPorCorreo("ana@empresa.com"))
+            .thenReturn(Optional.of(cuentaConContrasena("Clave2026", EstadoCuenta.ACTIVA)));
+        for (int i = 0; i < LimiteIntentosIngreso.MAXIMO_FALLOS; i++) {
+            assertThatThrownBy(() -> servicio.ingresar(new IngresoDTO("ana@empresa.com", "OtraClave1")))
+                .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.UNAUTHORIZED));
+        }
+
+        assertThatThrownBy(() -> servicio.ingresar(new IngresoDTO("ana@empresa.com", "Clave2026")))
+            .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
+        verify(cuentaRepository, never()).save(any());
+    }
+
+    @Test
+    void ingresar_correoInexistente_tambienSeBloqueaParaNoRevelarQueNoExiste() {
+        when(cuentaRepository.buscarPorCorreo("nadie@empresa.com")).thenReturn(Optional.empty());
+        for (int i = 0; i < LimiteIntentosIngreso.MAXIMO_FALLOS; i++) {
+            assertThatThrownBy(() -> servicio.ingresar(new IngresoDTO("nadie@empresa.com", "Clave2026")))
+                .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.UNAUTHORIZED));
+        }
+
+        assertThatThrownBy(() -> servicio.ingresar(new IngresoDTO("nadie@empresa.com", "Clave2026")))
+            .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
     }
 
     @Test
