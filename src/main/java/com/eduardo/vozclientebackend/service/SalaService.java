@@ -113,6 +113,10 @@ public class SalaService {
         Sala sala = salaRepository.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Sala no encontrada"));
 
+        if (sala.getEstado() == EstadoSala.RESPONDIDO) {
+            throw new RuntimeException("Este enlace ya fue utilizado");
+        }
+
         if (sala.getEstado() == EstadoSala.EXPIRADO || sala.getVenceEn().isBefore(OffsetDateTime.now())) {
             sala.setEstado(EstadoSala.EXPIRADO);
             salaRepository.save(sala);
