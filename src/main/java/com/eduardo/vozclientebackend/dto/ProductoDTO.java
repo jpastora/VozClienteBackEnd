@@ -11,5 +11,6 @@ public record ProductoDTO(
         Boolean esActivo,
         Integer version,
         OffsetDateTime creadoEn,
-        OffsetDateTime actualizadoEn
+        OffsetDateTime actualizadoEn,
+        Long representanteId
 ) {}

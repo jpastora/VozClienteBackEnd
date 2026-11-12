@@ -32,25 +32,31 @@ public interface ProductoRepository
     // Listado paginado con filtros opcionales
     // por nombre y estado.
     @Query("""
-        SELECT p
-        FROM Producto p
-        WHERE p.empresaId = :empresaId
-          AND (
-              :nombre IS NULL
-              OR LOWER(p.nombre) LIKE
-                 CONCAT('%', LOWER(CAST(:nombre AS String)), '%')
-          )
-          AND (
-              :estado IS NULL
-              OR p.esActivo = :estado
-          )
-        """)
+    SELECT p
+    FROM Producto p
+    WHERE p.empresaId = :empresaId
+      AND (CAST(:representanteId AS Long) IS NULL
+           OR p.representanteId = :representanteId)
+      AND (
+          :nombre IS NULL
+          OR LOWER(p.nombre) LIKE
+             CONCAT('%', LOWER(CAST(:nombre AS String)), '%')
+      )
+      AND (
+          :estado IS NULL
+          OR p.esActivo = :estado
+      )
+    """)
     Page<Producto> buscarProductos(
         @Param("empresaId") Long empresaId,
+        @Param("representanteId") Long representanteId,
         @Param("nombre") String nombre,
         @Param("estado") Boolean estado,
         Pageable pageable
     );
+
+    Optional<Producto> findByIdAndEmpresaIdAndRepresentanteId(
+        Long id, Long empresaId, Long representanteId);
 
     // Validar nombres duplicados dentro de la empresa.
     // Permite excluir el producto actual al editar.
