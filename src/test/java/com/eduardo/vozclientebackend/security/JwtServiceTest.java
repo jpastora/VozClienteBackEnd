@@ -31,7 +31,7 @@ class JwtServiceTest {
         Optional<JwtService.SesionToken> sesion = servicio.validar(servicio.emitir("google-123"));
 
         assertThat(sesion).isPresent();
-        assertThat(sesion.get().googleSub()).isEqualTo("google-123");
+        assertThat(sesion.get().sujeto()).isEqualTo("google-123");
         assertThat(sesion.get().expiraEn()).isEqualTo(INICIO.plus(TREINTA_MINUTOS));
     }
 
@@ -83,6 +83,24 @@ class JwtServiceTest {
         JwtService.SesionToken sesion = servicioEn(INICIO).validar(servicioEn(INICIO).emitir("g")).orElseThrow();
 
         assertThat(servicioEn(INICIO.plus(Duration.ofMinutes(16))).debeRenovarse(sesion)).isTrue();
+    }
+
+    @Test
+    void cuentaId_tokenEmitidoConIdDeCuenta_devuelveElId() {
+        JwtService servicio = servicioEn(INICIO);
+
+        JwtService.SesionToken sesion = servicio.validar(servicio.emitir(42L)).orElseThrow();
+
+        assertThat(sesion.cuentaId()).contains(42L);
+    }
+
+    @Test
+    void cuentaId_tokenDeVersionAnteriorConSubDeGoogle_devuelveVacio() {
+        JwtService servicio = servicioEn(INICIO);
+
+        JwtService.SesionToken sesion = servicio.validar(servicio.emitir("google-123")).orElseThrow();
+
+        assertThat(sesion.cuentaId()).isEmpty();
     }
 
     @Test
