@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -20,8 +22,9 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
  * Configuración de seguridad (HU-01, RNF-01).
  *
  * <ul>
- *   <li>Ingreso únicamente con Google OAuth2 ({@code /oauth2/authorization/google}).</li>
- *   <li>Al volver de Google se emite un JWT propio en la cookie HttpOnly {@code VC_SESION}.</li>
+ *   <li>Ingreso con Google OAuth2 ({@code /oauth2/authorization/google}) o con correo y contraseña
+ *       ({@code POST /api/auth/ingresar}; registro en {@code POST /api/auth/registro}).</li>
+ *   <li>En ambos casos se emite un JWT propio en la cookie HttpOnly {@code VC_SESION}.</li>
  *   <li>Sin sesión HTTP en el servidor: cada solicitud se autentica con la cookie.</li>
  *   <li>Toda ruta {@code /api/**} exige sesión, salvo las del consumidor, que entra sin cuenta (RF-08).</li>
  *   <li>Sin sesión, la API responde 401 (no redirige a Google); el front-end muestra el ingreso.</li>
@@ -69,6 +72,8 @@ public class SecurityConfig {
                 // Flujo de Google y páginas de error
                 .requestMatchers("/oauth2/**", "/login/oauth2/**", "/error").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // Ingreso y registro con correo y contraseña
+                .requestMatchers(HttpMethod.POST, "/api/auth/ingresar", "/api/auth/registro").permitAll()
                 // Consumidor sin cuenta: consultar el enlace, aceptar la grabación y la señalización (RF-08, RF-09)
                 .requestMatchers(HttpMethod.GET, "/api/salas/*").permitAll()
                 .requestMatchers(HttpMethod.PATCH, "/api/salas/*/responder").permitAll()
@@ -94,5 +99,15 @@ public class SecurityConfig {
                 UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Cifrado de las contraseñas propias de la aplicación con BCrypt.
+     *
+     * @return el codificador de contraseñas
+     */
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

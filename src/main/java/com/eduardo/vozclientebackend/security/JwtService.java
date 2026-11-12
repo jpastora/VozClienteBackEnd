@@ -26,8 +26,8 @@ import java.util.Optional;
 /**
  * Emite y valida el JWT propio de Voz Cliente (HU-01).
  *
- * <p>El token se firma con HMAC-SHA256 y solo guarda el identificador de Google
- * ({@code sub}) de la cuenta. El rol y el estado se leen de la base de datos en cada
+ * <p>El token se firma con HMAC-SHA256 y solo guarda el id de la cuenta ({@code sub}), que
+ * sirve igual para el ingreso con Google y con correo y contraseña. El rol y el estado se leen de la base de datos en cada
  * solicitud, de modo que un cambio de rol o una desactivación aplican de inmediato (RF-02).
  * La sesión expira por inactividad: cada solicitud renueva el token (RNF de seguridad).</p>
  */
@@ -76,14 +76,24 @@ public class JwtService {
     /**
      * Emite un token nuevo para la cuenta.
      *
-     * @param googleSub identificador de Google de la cuenta
+     * @param cuentaId id de la cuenta
      * @return el JWT firmado, en formato compacto
      * @throws IllegalStateException si no se puede firmar el token
      */
-    public String emitir(String googleSub) {
+    public String emitir(Long cuentaId) {
+        return emitir(String.valueOf(cuentaId));
+    }
+
+    /**
+     * Emite un token con el sujeto indicado.
+     *
+     * @param sujeto valor del claim {@code sub}
+     * @return el JWT firmado, en formato compacto
+     */
+    String emitir(String sujeto) {
         Instant ahora = reloj.instant();
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
-            .subject(googleSub)
+            .subject(sujeto)
             .issuer(EMISOR)
             .issueTime(Date.from(ahora))
             .expirationTime(Date.from(ahora.plus(duracionInactividad)))
@@ -170,10 +180,23 @@ public class JwtService {
     /**
      * Datos de una sesión válida.
      *
-     * @param googleSub identificador de Google de la cuenta
+     * @param sujeto    claim {@code sub}: el id de la cuenta
      * @param emitidoEn fecha de emisión del token
      * @param expiraEn  fecha de expiración del token
      */
-    public record SesionToken(String googleSub, Instant emitidoEn, Instant expiraEn) {
+    public record SesionToken(String sujeto, Instant emitidoEn, Instant expiraEn) {
+
+        /**
+         * Id de la cuenta del token.
+         *
+         * @return el id, o vacío si el sujeto no es un id (por ejemplo, un token de una versión anterior)
+         */
+        public Optional<Long> cuentaId() {
+            try {
+                return Optional.of(Long.valueOf(sujeto));
+            } catch (NumberFormatException e) {
+                return Optional.empty();
+            }
+        }
     }
 }

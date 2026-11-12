@@ -13,6 +13,11 @@ public record CrearRepresentanteDTO(
     @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "El correo electrónico no es válido")
     @Size(max = 254, message = "El correo no puede superar 254 caracteres")
-    String correo
+    String correo,
+
+    // Opcional: contraseña inicial para que el representante ingrese sin cuenta de Google.
+    // Si se omite, el representante ingresa con Google usando este correo.
+    @Size(min = 8, max = 72, message = "La contraseña debe tener entre 8 y 72 caracteres")
+    String contrasena
 
 ) {}

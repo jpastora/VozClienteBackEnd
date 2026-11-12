@@ -69,9 +69,10 @@ public class GoogleLoginSuccessHandler implements AuthenticationSuccessHandler {
                 texto(usuarioGoogle.getAttribute("name")),
                 esVerdadero(usuarioGoogle.getAttribute("email_verified")));
 
-            String token = jwtService.emitir(cuenta.getGoogleSub());
+            String token = jwtService.emitir(cuenta.getId());
             cookieSesionService.escribir(response, token, jwtService.getDuracionInactividad());
-            response.sendRedirect(urlFrontend + "/");
+            // Se entra a /app: el front lleva a cada perfil a su pantalla de inicio.
+            response.sendRedirect(urlFrontend + "/app");
 
         } catch (IngresoRechazadoException e) {
             LOG.info("Ingreso con Google rechazado: {}", e.getMotivo());
