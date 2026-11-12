@@ -1,7 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import com.eduardo.vozclientebackend.dto.ContrasenaDTO;
 import com.eduardo.vozclientebackend.dto.CrearRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
 import com.eduardo.vozclientebackend.service.RepresentanteService;
@@ -63,19 +62,6 @@ public class RepresentanteController {
             representanteService.obtenerRepresentante(id);
 
         return ResponseEntity.ok(representante);
-    }
-
-    /**
-     * PATCH /api/representantes/{id}/contrasena. Asigna o cambia la contraseña de un representante,
-     * para que ingrese con correo y contraseña sin cuenta de Google.
-     */
-    @PreAuthorize("hasAuthority('representante:gestionar')")
-    @PatchMapping("/{id}/contrasena")
-    public ResponseEntity<CuentaDTO> asignarContrasena(
-        @PathVariable Long id,
-        @Valid @RequestBody ContrasenaDTO dto) {
-
-        return ResponseEntity.ok(representanteService.asignarContrasena(id, dto.contrasena()));
     }
 
     /**

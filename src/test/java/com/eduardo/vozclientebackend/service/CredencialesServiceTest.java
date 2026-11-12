@@ -83,7 +83,7 @@ class CredencialesServiceTest {
     }
 
     @Test
-    void ingresar_representantePendiente_loActivaEnSuPrimerIngreso() {
+    void ingresar_cuentaPendiente_laActivaEnSuPrimerIngreso() {
         Cuenta cuenta = cuentaConContrasena("Clave2026", EstadoCuenta.PENDIENTE);
         when(cuentaRepository.buscarPorCorreo("ana@empresa.com")).thenReturn(Optional.of(cuenta));
         when(cuentaRepository.save(any(Cuenta.class))).thenAnswer(i -> i.getArgument(0));
@@ -181,13 +181,5 @@ class CredencialesServiceTest {
         assertThatThrownBy(() -> servicio.registrar(
                 new RegistroDTO("Luis", "luis@tienda.com", "Clave2026Clave2026Clave")))
             .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.BAD_REQUEST));
-    }
-
-    @Test
-    void cifrar_contrasenaValida_devuelveUnHashBCrypt() {
-        String hash = servicio.cifrar("Clave2026");
-
-        assertThat(hash).startsWith("$2");
-        assertThat(encoder.matches("Clave2026", hash)).isTrue();
     }
 }

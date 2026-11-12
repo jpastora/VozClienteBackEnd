@@ -31,8 +31,8 @@ import java.util.Optional;
  *   <li>Un correo o una contraseña incorrectos responden el mismo mensaje, para no revelar qué
  *       correos existen.</li>
  *   <li>El registro crea la empresa y la cuenta como cliente-administrador. No toma cuentas que ya
- *       existen (por ejemplo, un representante registrado por su empresa): esa persona recibe su
- *       contraseña del cliente-administrador o ingresa con Google.</li>
+ *       existen (por ejemplo, un representante registrado por su empresa): esa persona ingresa con
+ *       Google.</li>
  * </ul>
  */
 @Service
@@ -81,7 +81,7 @@ public class CredencialesService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La cuenta está inactiva");
         }
         if (cuenta.getEstado() == EstadoCuenta.PENDIENTE) {
-            // Representante que ingresa por primera vez con la contraseña que le asignaron.
+            // Cuenta pendiente que ingresa por primera vez.
             cuenta.setEstado(EstadoCuenta.ACTIVA);
         }
 
@@ -131,18 +131,6 @@ public class CredencialesService {
         cuenta.setCreadoEn(ahora);
         cuenta.setActualizadoEn(ahora);
         return cuentaRepository.save(cuenta);
-    }
-
-    /**
-     * Hash de una contraseña nueva, validando antes la política.
-     *
-     * @param contrasena contraseña en texto plano
-     * @return hash BCrypt
-     * @throws ResponseStatusException 400 si no cumple la política
-     */
-    public String cifrar(String contrasena) {
-        PoliticaContrasena.validar(contrasena);
-        return passwordEncoder.encode(contrasena);
     }
 
     private static String normalizar(String correo) {

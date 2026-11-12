@@ -27,7 +27,6 @@ public class RepresentanteService {
     private final CuentaRepository cuentaRepository;
     private final CuentaMapper cuentaMapper;
     private final UsuarioActualService usuarioActualService;
-    private final CredencialesService credencialesService;
 
     @Transactional
     public CuentaDTO crearRepresentante(CrearRepresentanteDTO dto) {
@@ -53,12 +52,8 @@ public class RepresentanteService {
         representante.setRol(RolCuenta.REPRESENTANTE);
         representante.setEstado(EstadoCuenta.ACTIVA);
 
-        // El representante vinculará Google al iniciar sesión, o ingresará con la contraseña
-        // inicial que le asigne el cliente-administrador (opcional).
+        // El representante vinculará Google al iniciar sesión.
         representante.setGoogleSub(null);
-        if (dto.contrasena() != null && !dto.contrasena().isBlank()) {
-            representante.setContrasenaHash(credencialesService.cifrar(dto.contrasena()));
-        }
         representante.setUltimoIngresoEn(null);
 
         OffsetDateTime ahora = OffsetDateTime.now();
@@ -144,37 +139,6 @@ public class RepresentanteService {
         Cuenta actualizada = cuentaRepository.saveAndFlush(representante);
 
         return cuentaMapper.toDto(actualizada);
-    }
-
-    /**
-     * Asigna o cambia la contraseña de un representante de la empresa, para que ingrese sin Google.
-     *
-     * @param id         id del representante
-     * @param contrasena contraseña nueva en texto plano
-     * @return el representante actualizado
-     * @throws ResponseStatusException 404 si no es un representante de la empresa; 400 si la
-     *                                 contraseña no cumple la política
-     */
-    @Transactional
-    public CuentaDTO asignarContrasena(Long id, String contrasena) {
-
-        Cuenta administrador = obtenerAdministradorAutorizado();
-
-        Cuenta representante = cuentaRepository
-            .findByIdAndEmpresaIdAndRol(
-                id,
-                administrador.getEmpresaId(),
-                RolCuenta.REPRESENTANTE
-            )
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Representante no encontrado"
-            ));
-
-        representante.setContrasenaHash(credencialesService.cifrar(contrasena));
-        representante.setActualizadoEn(OffsetDateTime.now());
-
-        return cuentaMapper.toDto(cuentaRepository.saveAndFlush(representante));
     }
 
     private Cuenta obtenerAdministradorAutorizado() {
