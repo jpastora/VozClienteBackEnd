@@ -1,0 +1,99 @@
+name: vozclientebackend
+
+services:
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Debes configurar POSTGRES_PASSWORD}
+      POSTGRES_DB: voz_cliente_db
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d voz_cliente_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - vc_network
+
+  whisper-api:
+    build:
+      context: ../python-api
+    container_name: whisper-api
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - WHISPER_MODEL=small      # tiny, base, small, medium, large-v3
+      - WHISPER_LANGUAGE=es      # vacío = detección automática
+      - WHISPER_DEVICE=cpu
+      - WHISPER_COMPUTE_TYPE=int8
+    volumes:
+      - whisper_models:/models   # coincide con HF_HOME del Dockerfile
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 240s         # el primer arranque descarga el modelo
+    restart: unless-stopped
+    networks:
+      - vc_network
+
+  spring-backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: spring-backend
+    labels:
+      - "org.springframework.boot.ignore=true"
+    ports:
+      - "8070:8070"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      whisper-api:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/voz_cliente_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - WHISPER_API_URL=http://whisper-api:8000/transcribir
+      - APP_STORAGE_GRABACIONES_PATH=/app/grabaciones
+      # Ingreso con Google y sesión (HU-01). Valores en docker/.env (ver .env.example).
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-sin-configurar}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-sin-configurar}
+      - JWT_SECRET=${JWT_SECRET:-}
+      - APP_FRONTEND_URL=${APP_FRONTEND_URL:-http://localhost:4200}
+      - APP_COOKIE_SEGURA=${APP_COOKIE_SEGURA:-false}
+      # Pendientes de definir (descomentar cuando estén listas):
+      # - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE:-dev}
+      # - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    volumes:
+      - grabaciones_data:/app/grabaciones
+    restart: unless-stopped
+    networks:
+      - vc_network
+
+  # vc-frontend:
+  #   image: vc-frontend:latest
+  #   container_name: vc-frontend
+  #   ports:
+  #     - "4200:80"
+  #   depends_on:
+  #     - spring-backend
+  #   restart: unless-stopped
+  #   networks:
+  #     - vc_network
+
+volumes:
+  pgdata:
+  grabaciones_data:
+  whisper_models:
+
+networks:
+  vc_network:
