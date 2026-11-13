@@ -38,6 +38,10 @@ public class Cuenta {
     @Column(name = "google_sub", length = 255)
     private String googleSub;
 
+    /** Hash BCrypt de la contraseña propia; nulo si la cuenta solo ingresa con Google. */
+    @Column(name = "contrasena_hash", length = 100)
+    private String contrasenaHash;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private RolCuenta rol;

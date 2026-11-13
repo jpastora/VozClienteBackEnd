@@ -223,6 +223,16 @@ Ejecución:
 5. `GET /api/auth/yo` devuelve la persona con sesión; toda ruta `/api/**` responde `401` sin sesión, excepto las del consumidor (`GET /api/salas/{token}`, `PATCH /api/salas/{token}/responder`) y `/signaling`.
 6. Para probar endpoints con Postman: ingrese en el navegador, copie el valor de la cookie `VC_SESION` y envíelo como cookie en la solicitud.
 
+### 9.1.1 Ingreso con correo y contraseña
+
+- Además de Google, se puede ingresar con correo y contraseña propios de la aplicación: `POST /api/auth/ingresar` con `{ correo, contrasena }`.
+- `POST /api/auth/registro` con `{ nombreCompleto, correo, contrasena }` crea la empresa y la cuenta como cliente-administrador, igual que el primer ingreso con Google. No toma correos que ya existen.
+- Los representantes siguen ingresando con Google, con el correo que registró su empresa.
+- Las contraseñas se guardan solo como hash BCrypt (columna `cuentas.contrasena_hash`, migración V7). Deben tener entre 8 y 20 caracteres, con al menos una mayúscula, una minúscula y un número. En el registro, el nombre completo solo admite letras (con tildes) y espacios.
+- Correo inexistente y contraseña incorrecta responden el mismo `401`, para no revelar qué correos están registrados. Ambos ingresos dejan la misma cookie de sesión `VC_SESION`.
+- Después de 5 intentos fallidos seguidos con el mismo correo (en 15 minutos), el ingreso con ese correo se bloquea 15 minutos y responde `429` (`security/LimiteIntentosIngreso.java`). También cuentan los correos que no existen, para que el bloqueo no revele cuáles están registrados. El conteo vive en memoria: alcanza para una sola instancia del back-end.
+- **Riesgo conocido (iteración 2):** el registro todavía no verifica el correo, porque el proyecto no tiene servidor de correo. Para que nadie conserve el acceso a una cuenta creada con un correo ajeno, cuando una cuenta con contraseña se vincula por primera vez con Google, la contraseña se borra y la cuenta sigue con Google. Pendiente para la iteración 2: verificación del correo al registrarse y recuperación de contraseña por correo (la pantalla ya existe en el front-end).
+
 ### 9.2 Permisos por rol (RF-02)
 
 - La matriz vive en `security/PermisosPorRol.java`: es el único lugar donde se decide qué puede hacer cada rol.

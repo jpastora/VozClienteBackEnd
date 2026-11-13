@@ -17,6 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class UsuarioActualService {
 
+    /** Atributo del principal con el id de la cuenta; lo pone el filtro de la cookie de sesión. */
+    public static final String ATRIBUTO_CUENTA_ID = "cuentaId";
+
     private final CuentaRepository cuentaRepository;
 
     /**
@@ -41,6 +44,18 @@ public class UsuarioActualService {
 
         if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {
 
+            // Sesión de la cookie (Google o correo y contraseña): se busca por el id de la cuenta.
+            Object cuentaId = oauth2User.getAttribute(ATRIBUTO_CUENTA_ID);
+
+            if (cuentaId instanceof Long id) {
+                return cuentaRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "La cuenta autenticada no está registrada"
+                    ));
+            }
+
+            // Perfil dev-test: identidad fija por el sub de Google.
             Object sub = oauth2User.getAttribute("sub");
 
             if (sub != null) {

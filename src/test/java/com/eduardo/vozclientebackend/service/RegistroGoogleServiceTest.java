@@ -118,6 +118,32 @@ class RegistroGoogleServiceTest {
     }
 
     @Test
+    void registrarIngreso_cuentaConContrasenaSinVincular_vinculaYBorraLaContrasena() {
+        Cuenta conContrasena = cuenta(null, RolCuenta.CLIENTE_ADMINISTRADOR, EstadoCuenta.ACTIVA);
+        conContrasena.setContrasenaHash("$2a$10$hashDeQuienRegistroElCorreo");
+        when(cuentaRepository.findByGoogleSub("g-3")).thenReturn(Optional.empty());
+        when(cuentaRepository.buscarPorCorreo("lrojas@atlas.com")).thenReturn(Optional.of(conContrasena));
+        guardarDevuelveLoMismo();
+
+        Cuenta resultado = servicio.registrarIngreso("g-3", "lrojas@atlas.com", "Laura Rojas", true);
+
+        assertThat(resultado.getGoogleSub()).isEqualTo("g-3");
+        assertThat(resultado.getContrasenaHash()).isNull();
+    }
+
+    @Test
+    void registrarIngreso_cuentaYaVinculadaConContrasena_conservaLaContrasena() {
+        Cuenta vinculada = cuenta("g-1", RolCuenta.CLIENTE_ADMINISTRADOR, EstadoCuenta.ACTIVA);
+        vinculada.setContrasenaHash("$2a$10$hashPuestoDespuesDeVincular");
+        when(cuentaRepository.findByGoogleSub("g-1")).thenReturn(Optional.of(vinculada));
+        guardarDevuelveLoMismo();
+
+        Cuenta resultado = servicio.registrarIngreso("g-1", "lrojas@atlas.com", "Laura", true);
+
+        assertThat(resultado.getContrasenaHash()).isEqualTo("$2a$10$hashPuestoDespuesDeVincular");
+    }
+
+    @Test
     void registrarIngreso_correoNoVerificado_rechazaElIngreso() {
         assertThatThrownBy(() -> servicio.registrarIngreso("g-1", "ana@gmail.com", "Ana", false))
             .isInstanceOf(IngresoRechazadoException.class)
