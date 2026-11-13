@@ -26,6 +26,8 @@ public record ProductoRequestDTO(
     )
     String categoria,
 
-    Boolean esActivo
+    Boolean esActivo,
+
+    Long representanteId
 
 ) {}

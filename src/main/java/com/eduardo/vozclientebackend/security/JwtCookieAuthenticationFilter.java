@@ -3,6 +3,7 @@ package com.eduardo.vozclientebackend.security;
 import com.eduardo.vozclientebackend.enums.EstadoCuenta;
 import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
+import com.eduardo.vozclientebackend.service.UsuarioActualService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,6 +18,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,10 +26,9 @@ import java.util.Optional;
 /**
  * Autentica cada solicitud a partir de la cookie de sesión (HU-01).
  *
- * <p>Valida el JWT, busca la cuenta por su identificador de Google y, si está activa,
- * la deja en el contexto de seguridad con el rol vigente en la base de datos. El
- * principal es un {@link DefaultOAuth2User} con el atributo {@code sub}, que es lo que
- * espera {@code UsuarioActualService}. Cuando el token pasó la mitad de su vida, se emite
+ * <p>Valida el JWT, busca la cuenta por su id y, si está activa, la deja en el contexto de
+ * seguridad con el rol vigente en la base de datos. El principal es un {@link DefaultOAuth2User}
+ * con el atributo {@code cuentaId}, que es lo que usa {@code UsuarioActualService}. Cuando el token pasó la mitad de su vida, se emite
  * uno nuevo para que la sesión solo expire por inactividad.</p>
  *
  * <p>No se declara como {@code @Component} para que Spring Boot no lo registre dos veces;
@@ -72,9 +73,11 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Optional<Cuenta> cuenta = cuentaRepository.findByGoogleSub(sesion.get().googleSub());
+        // El token guarda el id de la cuenta (ingreso con Google o con contraseña).
+        Optional<Cuenta> cuenta = sesion.get().cuentaId().flatMap(cuentaRepository::findById);
         if (cuenta.isEmpty() || cuenta.get().getEstado() != EstadoCuenta.ACTIVA) {
-            // La cuenta se desactivó o se eliminó después de iniciar sesión.
+            // La cuenta se desactivó o se eliminó después de iniciar sesión, o el token es de una
+            // versión anterior.
             cookieSesionService.borrar(response);
             return;
         }
@@ -82,20 +85,21 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
         Cuenta activa = cuenta.get();
         // Rol y permisos vigentes en la base de datos (matriz de PermisosPorRol).
         List<GrantedAuthority> permisos = PermisosPorRol.autoridades(activa.getRol());
-        DefaultOAuth2User principal = new DefaultOAuth2User(
-            permisos,
-            Map.of(
-                "sub", activa.getGoogleSub(),
-                "email", activa.getCorreo(),
-                "name", activa.getNombreCompleto()),
-            "sub");
+        Map<String, Object> atributos = new HashMap<>();
+        atributos.put(UsuarioActualService.ATRIBUTO_CUENTA_ID, activa.getId());
+        atributos.put("email", activa.getCorreo());
+        atributos.put("name", activa.getNombreCompleto());
+        if (activa.getGoogleSub() != null) {
+            atributos.put("sub", activa.getGoogleSub());
+        }
+        DefaultOAuth2User principal = new DefaultOAuth2User(permisos, atributos, "email");
 
         SecurityContext contexto = SecurityContextHolder.createEmptyContext();
         contexto.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(principal, null, permisos));
         SecurityContextHolder.setContext(contexto);
 
         if (jwtService.debeRenovarse(sesion.get())) {
-            cookieSesionService.escribir(response, jwtService.emitir(activa.getGoogleSub()),
+            cookieSesionService.escribir(response, jwtService.emitir(activa.getId()),
                 jwtService.getDuracionInactividad());
         }
     }
