@@ -230,6 +230,8 @@ Ejecución:
 - Los representantes siguen ingresando con Google, con el correo que registró su empresa.
 - Las contraseñas se guardan solo como hash BCrypt (columna `cuentas.contrasena_hash`, migración V7). Deben tener entre 8 y 20 caracteres, con al menos una mayúscula, una minúscula y un número. En el registro, el nombre completo solo admite letras (con tildes) y espacios.
 - Correo inexistente y contraseña incorrecta responden el mismo `401`, para no revelar qué correos están registrados. Ambos ingresos dejan la misma cookie de sesión `VC_SESION`.
+- Después de 5 intentos fallidos seguidos con el mismo correo (en 15 minutos), el ingreso con ese correo se bloquea 15 minutos y responde `429` (`security/LimiteIntentosIngreso.java`). También cuentan los correos que no existen, para que el bloqueo no revele cuáles están registrados. El conteo vive en memoria: alcanza para una sola instancia del back-end.
+- **Riesgo conocido (iteración 2):** el registro todavía no verifica el correo, porque el proyecto no tiene servidor de correo. Para que nadie conserve el acceso a una cuenta creada con un correo ajeno, cuando una cuenta con contraseña se vincula por primera vez con Google, la contraseña se borra y la cuenta sigue con Google. Pendiente para la iteración 2: verificación del correo al registrarse y recuperación de contraseña por correo (la pantalla ya existe en el front-end).
 
 ### 9.2 Permisos por rol (RF-02)
 

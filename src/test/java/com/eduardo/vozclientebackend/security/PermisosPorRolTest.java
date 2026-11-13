@@ -58,8 +58,10 @@ class PermisosPorRolTest {
     @Test
     void autoridades_representante_noPuedeAdministrarProductosNiRepresentantes() {
         assertThat(autoridades(RolCuenta.REPRESENTANTE))
-            .contains("ROLE_REPRESENTANTE", "producto:leer", "sala:leer", "entrevista:gestionar", "grabacion:subir")
-            .doesNotContain("producto:escribir", "sala:crear", "representante:gestionar", "compra:crear");
+            // El representante también crea salas para sus entrevistas (ajuste de la matriz en f0c0848).
+            .contains("ROLE_REPRESENTANTE", "producto:leer", "sala:leer", "sala:crear", "entrevista:gestionar",
+                "grabacion:subir")
+            .doesNotContain("producto:escribir", "representante:gestionar", "compra:crear");
     }
 
     @Test
