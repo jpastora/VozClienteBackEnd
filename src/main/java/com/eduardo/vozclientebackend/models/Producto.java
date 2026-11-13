@@ -18,6 +18,9 @@ public class Producto {
     @Column(name = "empresa_id", nullable = false)
     private Long empresaId;
 
+    @Column(name = "representante_id")
+    private Long representanteId;
+
     @Column(nullable = false, length = 100)
     private String nombre;
 
