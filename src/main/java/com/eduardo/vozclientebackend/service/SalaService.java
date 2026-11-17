@@ -1,12 +1,14 @@
 package com.eduardo.vozclientebackend.service;
 
 import com.eduardo.vozclientebackend.dto.SalaDTO;
+import com.eduardo.vozclientebackend.enums.EstadoEntrevista;
 import com.eduardo.vozclientebackend.enums.EstadoSala;
 import com.eduardo.vozclientebackend.mappers.SalaMapper;
 import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.models.Producto;
 import com.eduardo.vozclientebackend.models.Sala;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
+import com.eduardo.vozclientebackend.repository.EntrevistaRepository;
 import com.eduardo.vozclientebackend.repository.ProductoRepository;
 import com.eduardo.vozclientebackend.repository.SalaRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class SalaService {
     private final CuentaRepository cuentaRepository;
     private final ProductoRepository productoRepository;
     private final SalaMapper salaMapper;
+    private final EntrevistaRepository entrevistaRepository;
 
     /**
      * Crea una nueva sala con los datos básicos.
@@ -114,9 +117,17 @@ public class SalaService {
             .orElseThrow(() -> new RuntimeException("Sala no encontrada"));
 
         if (sala.getEstado() == EstadoSala.RESPONDIDO) {
+            // Reingreso tras una caída: misma persona y llamada todavía en curso.
+            boolean mismaPersona = sala.getNombreConsumidor() != null
+                && sala.getNombreConsumidor().equalsIgnoreCase(nombreConsumidor.trim());
+            boolean llamadaEnCurso = entrevistaRepository
+                .existsBySalaIdAndEstado(sala.getId(), EstadoEntrevista.EN_CURSO);
+
+            if (mismaPersona && llamadaEnCurso) {
+                return salaMapper.toDto(sala); // no se vuelve a registrar la aceptación
+            }
             throw new RuntimeException("Este enlace ya fue utilizado");
         }
-
         if (sala.getEstado() == EstadoSala.EXPIRADO || sala.getVenceEn().isBefore(OffsetDateTime.now())) {
             sala.setEstado(EstadoSala.EXPIRADO);
             salaRepository.save(sala);
@@ -129,19 +140,20 @@ public class SalaService {
 
         Sala salaActualizada = salaRepository.save(sala);
         return salaMapper.toDto(salaActualizada);
-    }
 
-    /**
-     * Método privado para generar un token.
-     */
-    private String generarTokenUnico() {
-        String token;
-        do {
-            // 256 bits aleatorios en Base64URL sin relleno: 43 caracteres, no adivinable (diccionario SAL-04).
-            byte[] bytes = new byte[BYTES_TOKEN];
-            GENERADOR_SEGURO.nextBytes(bytes);
-            token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        } while (salaRepository.existsByToken(token)); // Asegura que no exista ya en la BD
-        return token;
     }
+        /**
+         * Método privado para generar un token.
+         */
+
+        private String generarTokenUnico() {
+            String token;
+            do {
+                // 256 bits aleatorios en Base64URL sin relleno: 43 caracteres, no adivinable (diccionario SAL-04).
+                byte[] bytes = new byte[BYTES_TOKEN];
+                GENERADOR_SEGURO.nextBytes(bytes);
+                token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+            } while (salaRepository.existsByToken(token)); // Asegura que no exista ya en la BD
+            return token;
+        }
 }

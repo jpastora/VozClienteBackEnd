@@ -48,4 +48,21 @@ public class Grabacion {
 
     @Column(name = "creado_en", nullable = false)
     private OffsetDateTime creadoEn;
+
+    /** Último fragmento aceptado del canal del consumidor (-1 = ninguno). */
+    @Column(name = "ultima_secuencia_cliente", nullable = false)
+    private Integer ultimaSecuenciaCliente = -1;
+
+    /** Último fragmento aceptado del canal del representante (-1 = ninguno). */
+    @Column(name = "ultima_secuencia_representante", nullable = false)
+    private Integer ultimaSecuenciaRepresentante = -1;
+
+    /** Bytes confirmados del archivo del representante (el del consumidor usa tamanoBytes). */
+    @Column(name = "bytes_canal_representante", nullable = false)
+    private Long bytesCanalRepresentante = 0L;
+
+    /** Momento del último fragmento recibido; sirve para cerrar grabaciones abandonadas. */
+    @Column(name = "ultimo_fragmento_en")
+    private OffsetDateTime ultimoFragmentoEn;
+
 }
