@@ -24,6 +24,8 @@ public interface EntrevistaRepository
     List<Entrevista> findByEstado(
         EstadoEntrevista estado);
 
+    boolean existsBySalaIdAndEstado(Long salaId, EstadoEntrevista estado);
+
     List<Entrevista> findByEstadoAndInicioEnBefore(
         EstadoEntrevista estado,
         OffsetDateTime limite);

@@ -11,6 +11,8 @@ public interface MencionCompetenciaRepository
     extends JpaRepository<MencionCompetencia, Long> {
 
     List<MencionCompetencia>
-    findByAnalisisIdOrderByFrecuenciaDesc(
-        Long analisisId);
+    findByAnalisisIdOrderByFrecuenciaDesc(Long analisisId);
+
+
+    List<MencionCompetencia> findByAnalisisId(Long analisisId);
 }

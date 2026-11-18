@@ -3,6 +3,8 @@ package com.eduardo.vozclientebackend.service;
 import com.eduardo.vozclientebackend.dto.TranscripcionDTO;
 import com.eduardo.vozclientebackend.enums.EstadoTranscripcion;
 import com.eduardo.vozclientebackend.mappers.TranscripcionMapper;
+import com.eduardo.vozclientebackend.enums.EstadoGrabacion;
+import com.eduardo.vozclientebackend.exceptions.GrabacionEstadoInvalidoException;
 import com.eduardo.vozclientebackend.models.Grabacion;
 import com.eduardo.vozclientebackend.models.Transcripcion;
 import com.eduardo.vozclientebackend.repository.GrabacionRepository;
@@ -61,8 +63,13 @@ public class TranscripcionService {
      * y lanza el procesamiento en segundo plano. Devuelve inmediatamente.
      */
     public TranscripcionDTO solicitarTranscripcion(Long grabacionId) {
-        if (!grabacionRepository.existsById(grabacionId)) {
-            throw new RuntimeException("Grabación no encontrada con ID: " + grabacionId);
+        Grabacion grabacion = grabacionRepository.findById(grabacionId)
+            .orElseThrow(() -> new RuntimeException("Grabación no encontrada con ID: " + grabacionId));
+
+        // El archivo todavía se está escribiendo: se transcribe cuando la grabación se cierre.
+        if (grabacion.getEstado() == EstadoGrabacion.GRABANDO) {
+            throw new GrabacionEstadoInvalidoException(
+                "La grabación " + grabacionId + " sigue en curso; espera a que termine.");
         }
 
         Transcripcion transcripcion = transcripcionRepository.findByGrabacionId(grabacionId)

@@ -1,5 +1,8 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.exceptions.FragmentoFueraDeOrdenException;
+import com.eduardo.vozclientebackend.exceptions.GrabacionEstadoInvalidoException;
+import com.eduardo.vozclientebackend.exceptions.SalaNoEliminableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -73,6 +76,35 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ProductoDuplicadoException.class)
     public ResponseEntity<Map<String, Object>> manejarDuplicado(
         ProductoDuplicadoException ex) {
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(Map.of("mensaje", ex.getMessage()));
+    }
+
+    @ExceptionHandler(SalaNoEliminableException.class)
+    public ResponseEntity<Map<String, Object>> manejarSalaNoEliminable(
+        SalaNoEliminableException ex) {
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(Map.of("mensaje", ex.getMessage()));
+    }
+
+
+    @ExceptionHandler(FragmentoFueraDeOrdenException.class)
+    public ResponseEntity<Map<String, Object>> manejarFragmentoFueraDeOrden(
+        FragmentoFueraDeOrdenException ex) {
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(Map.of("mensaje", ex.getMessage(), "secuenciaEsperada", ex.getSecuenciaEsperada()));
+    }
+
+
+    @ExceptionHandler(GrabacionEstadoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarGrabacionEstadoInvalido(
+        GrabacionEstadoInvalidoException ex) {
 
         return ResponseEntity
             .status(HttpStatus.CONFLICT)

@@ -1,12 +1,16 @@
 package com.eduardo.vozclientebackend.service;
 
 import com.eduardo.vozclientebackend.dto.SalaDTO;
+import com.eduardo.vozclientebackend.enums.EstadoEntrevista;
 import com.eduardo.vozclientebackend.enums.EstadoSala;
+import com.eduardo.vozclientebackend.exceptions.SalaNoEliminableException;
 import com.eduardo.vozclientebackend.mappers.SalaMapper;
 import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.models.Producto;
 import com.eduardo.vozclientebackend.models.Sala;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
+import com.eduardo.vozclientebackend.repository.EntrevistaRepository;
+import com.eduardo.vozclientebackend.repository.GrabacionRepository;
 import com.eduardo.vozclientebackend.repository.ProductoRepository;
 import com.eduardo.vozclientebackend.repository.SalaRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +39,8 @@ public class SalaService {
     private final CuentaRepository cuentaRepository;
     private final ProductoRepository productoRepository;
     private final SalaMapper salaMapper;
+    private final EntrevistaRepository entrevistaRepository;
+    private final GrabacionRepository grabacionRepository;
 
     /**
      * Crea una nueva sala con los datos básicos.
@@ -89,7 +95,13 @@ public class SalaService {
     public SalaDTO obtenerPorToken(String token) {
         Sala sala = salaRepository.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Sala no encontrada con el token proporcionado"));
-        return salaMapper.toDto(sala);
+        SalaDTO dto = salaMapper.toDto(sala);
+        // El consumidor no tiene sesión y no puede consultar /productos: el nombre viaja con la sala.
+        String nombreProducto = productoRepository.findById(sala.getProductoId())
+            .map(Producto::getNombre)
+            .orElse(null);
+        return new SalaDTO(dto.id(), dto.productoId(), dto.creadoPorId(), dto.token(), dto.estado(),
+            dto.emitidaEn(), dto.venceEn(), dto.nombreConsumidor(), dto.aceptoGrabacionEn(), nombreProducto);
     }
 
     /**
@@ -106,6 +118,31 @@ public class SalaService {
     }
 
     /**
+     * Elimina una sala que no se usó, junto con la entrevista que se crea al generar el enlace.
+     * No se permite si el consumidor ya respondió o si alguna entrevista tiene grabación.
+     */
+    @Transactional
+    public void eliminarSala(String token) {
+        Sala sala = salaRepository.findByToken(token)
+            .orElseThrow(() -> new IllegalArgumentException("Sala no encontrada"));
+
+        if (sala.getEstado() == EstadoSala.RESPONDIDO) {
+            throw new SalaNoEliminableException("Esta sala ya fue utilizada y no se puede eliminar.");
+        }
+
+        List<com.eduardo.vozclientebackend.models.Entrevista> entrevistas =
+            entrevistaRepository.findBySalaId(sala.getId());
+        for (var e : entrevistas) {
+            if (grabacionRepository.existsByEntrevistaId(e.getId())) {
+                throw new SalaNoEliminableException("Esta sala ya tiene una grabación y no se puede eliminar.");
+            }
+        }
+
+        entrevistaRepository.deleteAll(entrevistas);
+        salaRepository.delete(sala);
+    }
+
+    /**
      * Cambia el estado de la sala a RESPONDIDO y registra cuándo aceptó la grabación el consumidor.
      */
     @Transactional
@@ -114,9 +151,17 @@ public class SalaService {
             .orElseThrow(() -> new RuntimeException("Sala no encontrada"));
 
         if (sala.getEstado() == EstadoSala.RESPONDIDO) {
+            // Reingreso tras una caída: misma persona y llamada todavía en curso.
+            boolean mismaPersona = sala.getNombreConsumidor() != null
+                && sala.getNombreConsumidor().equalsIgnoreCase(nombreConsumidor.trim());
+            boolean llamadaEnCurso = entrevistaRepository
+                .existsBySalaIdAndEstado(sala.getId(), EstadoEntrevista.EN_CURSO);
+
+            if (mismaPersona && llamadaEnCurso) {
+                return salaMapper.toDto(sala); // no se vuelve a registrar la aceptación
+            }
             throw new RuntimeException("Este enlace ya fue utilizado");
         }
-
         if (sala.getEstado() == EstadoSala.EXPIRADO || sala.getVenceEn().isBefore(OffsetDateTime.now())) {
             sala.setEstado(EstadoSala.EXPIRADO);
             salaRepository.save(sala);
@@ -129,11 +174,12 @@ public class SalaService {
 
         Sala salaActualizada = salaRepository.save(sala);
         return salaMapper.toDto(salaActualizada);
-    }
 
+    }
     /**
      * Método privado para generar un token.
      */
+
     private String generarTokenUnico() {
         String token;
         do {

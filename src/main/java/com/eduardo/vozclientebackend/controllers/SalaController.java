@@ -62,4 +62,15 @@ public class SalaController {
         SalaDTO salaActualizada = salaService.responderSala(token, nombreConsumidor);
         return ResponseEntity.ok(salaActualizada);
     }
+
+    /**
+     * DELETE /api/salas/{token}
+     * Elimina una sala que no se va a usar (y su entrevista vacía). 409 si ya fue utilizada.
+     */
+    @PreAuthorize("hasAuthority('sala:eliminar')")
+    @DeleteMapping("/{token}")
+    public ResponseEntity<Void> eliminarSala(@PathVariable String token) {
+        salaService.eliminarSala(token);
+        return ResponseEntity.noContent().build();
+    }
 }
