@@ -72,6 +72,10 @@ public final class PermisosPorRol {
 
     public static final String GUIA_GESTIONAR = "guia:gestionar";
 
+    public static final String ANALISIS_LEER = "analisis:leer";
+
+    public static final String ANALISIS_PROCESAR = "analisis:procesar";
+
     private static final Map<RolCuenta, Set<String>> PERMISOS = new EnumMap<>(RolCuenta.class);
 
     static {
@@ -83,7 +87,8 @@ public final class PermisosPorRol {
             GRABACION_LEER, GRABACION_SUBIR,
             TRANSCRIPCION_LEER, TRANSCRIPCION_GESTIONAR,
             PAQUETE_LEER,
-            COMPRA_LEER, COMPRA_CREAR, GUIA_LEER, GUIA_CREAR, GUIA_GESTIONAR));
+            COMPRA_LEER, COMPRA_CREAR, GUIA_LEER, GUIA_CREAR, GUIA_GESTIONAR,
+            ANALISIS_LEER, ANALISIS_PROCESAR));
 
         PERMISOS.put(RolCuenta.REPRESENTANTE, Set.of(
             PRODUCTO_LEER,

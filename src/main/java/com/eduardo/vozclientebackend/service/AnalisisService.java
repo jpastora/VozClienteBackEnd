@@ -16,6 +16,7 @@ import com.eduardo.vozclientebackend.mappers.MencionCompetenciaMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +87,8 @@ public class AnalisisService {
             respuestaIA = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
                 .user(transcripcion.getTexto())
+                .options(GoogleGenAiChatOptions.builder()
+                    .responseMimeType("application/json"))
                 .call()
                 .entity(RespuestaAnalisisIA.class);
         } catch (Exception e) {
