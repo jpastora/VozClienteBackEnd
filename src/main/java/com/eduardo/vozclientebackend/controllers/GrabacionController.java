@@ -1,7 +1,11 @@
 package com.eduardo.vozclientebackend.controllers;
 
+
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.eduardo.vozclientebackend.dto.FinalizarGrabacionDTO;
+import com.eduardo.vozclientebackend.dto.FragmentoAckDTO;
 import com.eduardo.vozclientebackend.dto.GrabacionDTO;
+import com.eduardo.vozclientebackend.enums.CanalGrabacion;
 import com.eduardo.vozclientebackend.service.GrabacionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -38,6 +42,41 @@ public class GrabacionController {
             esParcial
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaGrabacion);
+    }
+
+    /** POST /api/v1/grabaciones/{entrevistaId}/iniciar: crea la grabación en estado GRABANDO (idempotente). */
+    @PreAuthorize("hasAuthority('grabacion:subir')")
+    @PostMapping("/{entrevistaId}/iniciar")
+    public ResponseEntity<GrabacionDTO> iniciar(@PathVariable Long entrevistaId) {
+        return ResponseEntity.ok(grabacionService.iniciarGrabacion(entrevistaId));
+    }
+
+    /**
+     * POST /api/v1/grabaciones/{entrevistaId}/fragmentos: recibe un fragmento de un canal.
+     * 409 con secuenciaEsperada si falta alguno; 409 sin ella si la grabación ya se cerró.
+     */
+    @PreAuthorize("hasAuthority('grabacion:subir')")
+    @PostMapping(value = "/{entrevistaId}/fragmentos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FragmentoAckDTO> recibirFragmento(
+        @PathVariable Long entrevistaId,
+        @RequestParam("canal") CanalGrabacion canal,
+        @RequestParam("secuencia") Integer secuencia,
+        @RequestParam("fragmento") MultipartFile fragmento,
+        @RequestParam(value = "hashSha256", required = false) String hashSha256
+    ) {
+        return ResponseEntity.ok(
+            grabacionService.recibirFragmento(entrevistaId, canal, secuencia, fragmento, hashSha256));
+    }
+
+    /** POST /api/v1/grabaciones/{entrevistaId}/finalizar: cierra la grabación (idempotente). */
+    @PreAuthorize("hasAuthority('grabacion:subir')")
+    @PostMapping("/{entrevistaId}/finalizar")
+    public ResponseEntity<GrabacionDTO> finalizar(
+        @PathVariable Long entrevistaId,
+        @RequestBody FinalizarGrabacionDTO cuerpo
+    ) {
+        return ResponseEntity.ok(grabacionService.finalizarGrabacion(
+            entrevistaId, cuerpo.duracionSegundos(), cuerpo.tieneAudioCliente(), cuerpo.esParcial()));
     }
 
     /**

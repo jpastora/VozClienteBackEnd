@@ -13,5 +13,6 @@ public record SalaDTO(
         OffsetDateTime emitidaEn,
         OffsetDateTime venceEn,
         String nombreConsumidor,
-        OffsetDateTime aceptoGrabacionEn
+        OffsetDateTime aceptoGrabacionEn,
+        String productoNombre
 ) {}

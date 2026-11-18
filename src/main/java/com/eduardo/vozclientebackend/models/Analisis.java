@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "analisis")
@@ -53,4 +55,8 @@ public class Analisis {
 
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
+
+    @OneToMany
+    @JoinColumn(name = "analisis_id", insertable = false, updatable = false)
+    private List<MencionCompetencia> menciones = new ArrayList<>();
 }

@@ -3,12 +3,14 @@ package com.eduardo.vozclientebackend.service;
 import com.eduardo.vozclientebackend.dto.SalaDTO;
 import com.eduardo.vozclientebackend.enums.EstadoEntrevista;
 import com.eduardo.vozclientebackend.enums.EstadoSala;
+import com.eduardo.vozclientebackend.exceptions.SalaNoEliminableException;
 import com.eduardo.vozclientebackend.mappers.SalaMapper;
 import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.models.Producto;
 import com.eduardo.vozclientebackend.models.Sala;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.EntrevistaRepository;
+import com.eduardo.vozclientebackend.repository.GrabacionRepository;
 import com.eduardo.vozclientebackend.repository.ProductoRepository;
 import com.eduardo.vozclientebackend.repository.SalaRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,7 @@ public class SalaService {
     private final ProductoRepository productoRepository;
     private final SalaMapper salaMapper;
     private final EntrevistaRepository entrevistaRepository;
+    private final GrabacionRepository grabacionRepository;
 
     /**
      * Crea una nueva sala con los datos básicos.
@@ -92,7 +95,13 @@ public class SalaService {
     public SalaDTO obtenerPorToken(String token) {
         Sala sala = salaRepository.findByToken(token)
             .orElseThrow(() -> new RuntimeException("Sala no encontrada con el token proporcionado"));
-        return salaMapper.toDto(sala);
+        SalaDTO dto = salaMapper.toDto(sala);
+        // El consumidor no tiene sesión y no puede consultar /productos: el nombre viaja con la sala.
+        String nombreProducto = productoRepository.findById(sala.getProductoId())
+            .map(Producto::getNombre)
+            .orElse(null);
+        return new SalaDTO(dto.id(), dto.productoId(), dto.creadoPorId(), dto.token(), dto.estado(),
+            dto.emitidaEn(), dto.venceEn(), dto.nombreConsumidor(), dto.aceptoGrabacionEn(), nombreProducto);
     }
 
     /**
@@ -106,6 +115,31 @@ public class SalaService {
 
         List<Sala> salas = salaRepository.findByProductoId(productoId);
         return salaMapper.toDtoList(salas);
+    }
+
+    /**
+     * Elimina una sala que no se usó, junto con la entrevista que se crea al generar el enlace.
+     * No se permite si el consumidor ya respondió o si alguna entrevista tiene grabación.
+     */
+    @Transactional
+    public void eliminarSala(String token) {
+        Sala sala = salaRepository.findByToken(token)
+            .orElseThrow(() -> new IllegalArgumentException("Sala no encontrada"));
+
+        if (sala.getEstado() == EstadoSala.RESPONDIDO) {
+            throw new SalaNoEliminableException("Esta sala ya fue utilizada y no se puede eliminar.");
+        }
+
+        List<com.eduardo.vozclientebackend.models.Entrevista> entrevistas =
+            entrevistaRepository.findBySalaId(sala.getId());
+        for (var e : entrevistas) {
+            if (grabacionRepository.existsByEntrevistaId(e.getId())) {
+                throw new SalaNoEliminableException("Esta sala ya tiene una grabación y no se puede eliminar.");
+            }
+        }
+
+        entrevistaRepository.deleteAll(entrevistas);
+        salaRepository.delete(sala);
     }
 
     /**
@@ -142,18 +176,18 @@ public class SalaService {
         return salaMapper.toDto(salaActualizada);
 
     }
-        /**
-         * Método privado para generar un token.
-         */
+    /**
+     * Método privado para generar un token.
+     */
 
-        private String generarTokenUnico() {
-            String token;
-            do {
-                // 256 bits aleatorios en Base64URL sin relleno: 43 caracteres, no adivinable (diccionario SAL-04).
-                byte[] bytes = new byte[BYTES_TOKEN];
-                GENERADOR_SEGURO.nextBytes(bytes);
-                token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-            } while (salaRepository.existsByToken(token)); // Asegura que no exista ya en la BD
-            return token;
-        }
+    private String generarTokenUnico() {
+        String token;
+        do {
+            // 256 bits aleatorios en Base64URL sin relleno: 43 caracteres, no adivinable (diccionario SAL-04).
+            byte[] bytes = new byte[BYTES_TOKEN];
+            GENERADOR_SEGURO.nextBytes(bytes);
+            token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        } while (salaRepository.existsByToken(token)); // Asegura que no exista ya en la BD
+        return token;
+    }
 }

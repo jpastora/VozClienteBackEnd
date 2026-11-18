@@ -35,6 +35,8 @@ public final class PermisosPorRol {
     public static final String SALA_LEER = "sala:leer";
     /** Generar enlaces de sala. */
     public static final String SALA_CREAR = "sala:crear";
+    /** Eliminar salas. */
+    public static final String SALA_ELIMINAR = "sala:eliminar";
     /** Crear, consultar y desactivar representantes. */
     public static final String REPRESENTANTE_GESTIONAR = "representante:gestionar";
     /** Consultar entrevistas. */
@@ -75,7 +77,7 @@ public final class PermisosPorRol {
     static {
         PERMISOS.put(RolCuenta.CLIENTE_ADMINISTRADOR, Set.of(
             PRODUCTO_LEER, PRODUCTO_ESCRIBIR,
-            SALA_LEER, SALA_CREAR,
+            SALA_LEER, SALA_CREAR, SALA_ELIMINAR,
             REPRESENTANTE_GESTIONAR,
             ENTREVISTA_LEER, ENTREVISTA_GESTIONAR,
             GRABACION_LEER, GRABACION_SUBIR,
@@ -85,7 +87,7 @@ public final class PermisosPorRol {
 
         PERMISOS.put(RolCuenta.REPRESENTANTE, Set.of(
             PRODUCTO_LEER,
-            SALA_LEER, SALA_CREAR,
+            SALA_LEER, SALA_CREAR, SALA_ELIMINAR,
             ENTREVISTA_LEER, ENTREVISTA_GESTIONAR, GUIA_LEER,
             GRABACION_SUBIR));
 
