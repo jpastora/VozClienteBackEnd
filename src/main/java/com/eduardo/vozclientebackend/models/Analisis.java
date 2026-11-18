@@ -7,6 +7,7 @@ import com.eduardo.vozclientebackend.enums.SentimientoAnalisis;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class Analisis {
     private String fragmentoApoyo;
 
     @Column(name = "tiene_menciones", nullable = false)
-    private Boolean tieneMenciones;
+    private Boolean tieneMenciones = false;
 
     @Column(name = "proveedor_ia", length = 60)
     private String proveedorIa;
@@ -50,9 +51,11 @@ public class Analisis {
     @Column(name = "mensaje_error", length = 500)
     private String mensajeError;
 
-    @Column(name = "creado_en", nullable = false)
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "creado_en", nullable = false, updatable = false)
     private OffsetDateTime creadoEn;
 
+    @org.hibernate.annotations.UpdateTimestamp
     @Column(name = "actualizado_en", nullable = false)
     private OffsetDateTime actualizadoEn;
 

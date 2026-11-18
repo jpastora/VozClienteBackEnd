@@ -45,8 +45,7 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           options:
-            # Nota: Asegúrate de que el modelo exista (ej. gemini-1.5-flash o gemini-2.0-flash)
-            model: gemini-1.5-flash
+            model: gemini-3.5-flash-lite
 
 whisper:
   api:

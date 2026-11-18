@@ -5,6 +5,7 @@ import com.eduardo.vozclientebackend.dto.MencionCompetenciaDTO;
 import com.eduardo.vozclientebackend.service.AnalisisService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class AnalisisController {
      * Dispara la IA para analizar la transcripción (Intención, Sentimiento y Competencia).
      * POST /api/v1/analisis/transcripciones/5
      */
+    @PreAuthorize("hasAuthority('analisis:procesar')")
     @PostMapping("/transcripciones/{transcripcionId}")
     public ResponseEntity<AnalisisDTO> procesarAnalisis(@PathVariable Long transcripcionId) {
         AnalisisDTO resultado = analisisService.procesarAnalisis(transcripcionId);
@@ -33,6 +35,7 @@ public class AnalisisController {
      * Obtiene un análisis previamente guardado sin volver a llamar a la IA.
      * GET /api/v1/analisis/transcripciones/5
      */
+    @PreAuthorize("hasAuthority('analisis:leer')")
     @GetMapping("/transcripciones/{transcripcionId}")
     public ResponseEntity<AnalisisDTO> obtenerAnalisisPorTranscripcion(@PathVariable Long transcripcionId) {
         AnalisisDTO resultado = analisisService.obtenerAnalisis(transcripcionId);
@@ -43,6 +46,7 @@ public class AnalisisController {
      * Obtiene SOLO las menciones de la competencia de un análisis.
      * GET /api/v1/analisis/transcripciones/5/menciones
      */
+    @PreAuthorize("hasAuthority('analisis:leer')")
     @GetMapping("/transcripciones/{transcripcionId}/menciones")
     public ResponseEntity<List<MencionCompetenciaDTO>> obtenerMencionesCompetencia(@PathVariable Long transcripcionId) {
         List<MencionCompetenciaDTO> menciones = analisisService.obtenerMencionesPorTranscripcion(transcripcionId);
