@@ -13,6 +13,13 @@ public record CrearRepresentanteDTO(
     @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "El correo electrónico no es válido")
     @Size(max = 254, message = "El correo no puede superar 254 caracteres")
-    String correo
+    String correo,
 
-) {}
+    /** Verdadero si la persona ingresará con Google: no se genera contraseña ni se envía correo. */
+    Boolean ingresaConGoogle
+
+) {
+    public CrearRepresentanteDTO(String nombreCompleto, String correo) {
+        this(nombreCompleto, correo, false);
+    }
+}

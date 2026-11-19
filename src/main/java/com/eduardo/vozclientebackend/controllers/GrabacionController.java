@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.FinalizarGrabacionDTO;
@@ -19,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class GrabacionController {
 
+    private final AccesoEmpresa acceso;
+
     private final GrabacionService grabacionService;
 
     /**
@@ -34,6 +37,7 @@ public class GrabacionController {
         @RequestParam(value = "tieneAudioCliente", defaultValue = "true") Boolean tieneAudioCliente,
         @RequestParam(value = "esParcial", defaultValue = "false") Boolean esParcial
     ) {
+        acceso.exigirEntrevista(entrevistaId);
         GrabacionDTO nuevaGrabacion = grabacionService.crearYGuardarGrabacionWebm(
             entrevistaId,
             archivo,
@@ -48,6 +52,7 @@ public class GrabacionController {
     @PreAuthorize("hasAuthority('grabacion:subir')")
     @PostMapping("/{entrevistaId}/iniciar")
     public ResponseEntity<GrabacionDTO> iniciar(@PathVariable Long entrevistaId) {
+        acceso.exigirEntrevista(entrevistaId);
         return ResponseEntity.ok(grabacionService.iniciarGrabacion(entrevistaId));
     }
 
@@ -64,6 +69,7 @@ public class GrabacionController {
         @RequestParam("fragmento") MultipartFile fragmento,
         @RequestParam(value = "hashSha256", required = false) String hashSha256
     ) {
+        acceso.exigirEntrevista(entrevistaId);
         return ResponseEntity.ok(
             grabacionService.recibirFragmento(entrevistaId, canal, secuencia, fragmento, hashSha256));
     }
@@ -75,6 +81,7 @@ public class GrabacionController {
         @PathVariable Long entrevistaId,
         @RequestBody FinalizarGrabacionDTO cuerpo
     ) {
+        acceso.exigirEntrevista(entrevistaId);
         return ResponseEntity.ok(grabacionService.finalizarGrabacion(
             entrevistaId, cuerpo.duracionSegundos(), cuerpo.tieneAudioCliente(), cuerpo.esParcial()));
     }
@@ -85,6 +92,7 @@ public class GrabacionController {
     @PreAuthorize("hasAuthority('grabacion:leer')")
     @GetMapping("/entrevista/{entrevistaId}")
     public ResponseEntity<GrabacionDTO> obtenerPorEntrevistaId(@PathVariable Long entrevistaId) {
+        acceso.exigirEntrevista(entrevistaId);
         GrabacionDTO grabacion = grabacionService.obtenerPorEntrevistaId(entrevistaId);
         return ResponseEntity.ok(grabacion);
     }

@@ -68,6 +68,14 @@ public class RepresentanteController {
      * PATCH /api/representantes/{id}/desactivar. Desactiva un representante.
      */
     @PreAuthorize("hasAuthority('representante:gestionar')")
+    @PostMapping("/{id}/contrasena-temporal")
+    public ResponseEntity<CuentaDTO> reenviarContrasenaTemporal(
+        @PathVariable Long id) {
+        return ResponseEntity.ok(
+            representanteService.reenviarContrasenaTemporal(id));
+    }
+
+    @PreAuthorize("hasAuthority('representante:gestionar')")
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<CuentaDTO> desactivarRepresentante(
         @PathVariable Long id) {

@@ -87,6 +87,10 @@ public class RegistroGoogleService {
     private Optional<Cuenta> buscarOVincular(String googleSub, String correo) {
         Optional<Cuenta> porSub = cuentaRepository.findByGoogleSub(googleSub);
         if (porSub.isPresent()) {
+            // Una cuenta de Google no usa contraseña: si quedó una temporal, se descarta.
+            porSub.get().setContrasenaHash(null);
+            porSub.get().setDebeCambiarContrasena(false);
+            porSub.get().setContrasenaTemporalVenceEn(null);
             return porSub;
         }
 
@@ -98,6 +102,8 @@ public class RegistroGoogleService {
             if (cuenta.getGoogleSub() == null) {
                 cuenta.setGoogleSub(googleSub);
                 cuenta.setContrasenaHash(null);
+                cuenta.setDebeCambiarContrasena(false);
+                cuenta.setContrasenaTemporalVenceEn(null);
             }
         });
         return porCorreo;

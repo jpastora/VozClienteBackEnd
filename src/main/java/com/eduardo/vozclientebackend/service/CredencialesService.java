@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.service;
 
+import com.eduardo.vozclientebackend.dto.CambiarContrasenaDTO;
 import com.eduardo.vozclientebackend.dto.IngresoDTO;
 import com.eduardo.vozclientebackend.dto.RegistroDTO;
 import com.eduardo.vozclientebackend.enums.EstadoCuenta;
@@ -89,6 +90,11 @@ public class CredencialesService {
         limiteIntentos.registrarExito(correo);
 
         Cuenta cuenta = encontrada.get();
+        if (cuenta.isDebeCambiarContrasena() && cuenta.getContrasenaTemporalVenceEn() != null
+            && cuenta.getContrasenaTemporalVenceEn().isBefore(OffsetDateTime.now(reloj))) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                "La contraseña temporal venció. Pide a un administrador que te la reenvíe");
+        }
         if (cuenta.getEstado() == EstadoCuenta.INACTIVA) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La cuenta está inactiva");
         }
@@ -142,6 +148,30 @@ public class CredencialesService {
         cuenta.setUltimoIngresoEn(ahora);
         cuenta.setCreadoEn(ahora);
         cuenta.setActualizadoEn(ahora);
+        return cuentaRepository.save(cuenta);
+    }
+
+    /**
+     * Cambia la contraseña de la cuenta y quita la marca de contraseña temporal.
+     *
+     * @throws ResponseStatusException 400 si la nueva no cumple la política o es igual a la actual;
+     *                                 401 si la contraseña actual no coincide
+     */
+    @Transactional
+    public Cuenta cambiarContrasena(Cuenta cuenta, CambiarContrasenaDTO datos) {
+        String hash = cuenta.getContrasenaHash();
+        if (hash == null || !passwordEncoder.matches(datos.contrasenaActual(), hash)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "La contraseña actual no es correcta");
+        }
+        PoliticaContrasena.validar(datos.contrasenaNueva());
+        if (datos.contrasenaNueva().equals(datos.contrasenaActual())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "La contraseña nueva debe ser distinta de la actual");
+        }
+        cuenta.setContrasenaHash(passwordEncoder.encode(datos.contrasenaNueva()));
+        cuenta.setDebeCambiarContrasena(false);
+        cuenta.setContrasenaTemporalVenceEn(null);
+        cuenta.setActualizadoEn(OffsetDateTime.now(reloj));
         return cuentaRepository.save(cuenta);
     }
 

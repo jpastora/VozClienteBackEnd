@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.CompraDTO;
 import com.eduardo.vozclientebackend.service.CompraService;
@@ -15,6 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CompraController {
 
+    private final AccesoEmpresa acceso;
+
     private final CompraService compraService;
 
     /**
@@ -24,6 +27,8 @@ public class CompraController {
     @PreAuthorize("hasAuthority('compra:crear')")
     @PostMapping
     public ResponseEntity<CompraDTO> crearCompra(@RequestBody CompraDTO compraDTO) {
+        acceso.exigirEmpresa(compraDTO.empresaId());
+        acceso.exigirCuentaActual(compraDTO.cuentaId());
         CompraDTO nuevaCompra = compraService.crearCompra(compraDTO);
         return new ResponseEntity<>(nuevaCompra, HttpStatus.CREATED);
     }
@@ -35,7 +40,7 @@ public class CompraController {
     @PreAuthorize("hasAuthority('compra:leer')")
     @GetMapping
     public ResponseEntity<List<CompraDTO>> obtenerTodasLasCompras() {
-        List<CompraDTO> compras = compraService.obtenerTodas();
+        List<CompraDTO> compras = acceso.filtrar(compraService.obtenerTodas(), CompraDTO::empresaId);
         return ResponseEntity.ok(compras);
     }
 
@@ -47,6 +52,7 @@ public class CompraController {
     @GetMapping("/{id}")
     public ResponseEntity<CompraDTO> obtenerCompraPorId(@PathVariable Long id) {
         CompraDTO compra = compraService.obtenerPorId(id);
+        acceso.exigirEmpresa(compra.empresaId());
         return ResponseEntity.ok(compra);
     }
 
@@ -57,6 +63,7 @@ public class CompraController {
     @PreAuthorize("hasAuthority('compra:leer')")
     @GetMapping("/empresa/{empresaId}")
     public ResponseEntity<List<CompraDTO>> obtenerComprasPorEmpresa(@PathVariable Long empresaId) {
+        acceso.exigirEmpresa(empresaId);
         List<CompraDTO> compras = compraService.obtenerPorEmpresa(empresaId);
         return ResponseEntity.ok(compras);
     }
@@ -68,6 +75,7 @@ public class CompraController {
     @PreAuthorize("hasAuthority('compra:leer')")
     @GetMapping("/cuenta/{cuentaId}")
     public ResponseEntity<List<CompraDTO>> obtenerComprasPorCuenta(@PathVariable Long cuentaId) {
+        acceso.exigirCuenta(cuentaId);
         List<CompraDTO> compras = compraService.obtenerPorCuentaId(cuentaId);
         return ResponseEntity.ok(compras);
     }
@@ -79,7 +87,7 @@ public class CompraController {
     @PreAuthorize("hasAuthority('compra:leer')")
     @GetMapping("/paquete/{paqueteId}")
     public ResponseEntity<List<CompraDTO>> obtenerComprasPorPaquete(@PathVariable Long paqueteId) {
-        List<CompraDTO> compras = compraService.obtenerPorPaquete(paqueteId);
+        List<CompraDTO> compras = acceso.filtrar(compraService.obtenerPorPaquete(paqueteId), CompraDTO::empresaId);
         return ResponseEntity.ok(compras);
     }
 

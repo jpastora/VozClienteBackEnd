@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.dto.CambiarContrasenaDTO;
 import com.eduardo.vozclientebackend.dto.IngresoDTO;
 import com.eduardo.vozclientebackend.dto.RegistroDTO;
 import com.eduardo.vozclientebackend.dto.SesionDTO;
@@ -85,6 +86,19 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(aSesion(cuenta));
     }
 
+    /**
+     * Cambia la contraseña de la persona con sesión iniciada. Con una contraseña temporal es el paso
+     * obligatorio antes de usar el resto de la aplicación.
+     *
+     * @param datos contraseña actual y contraseña nueva
+     * @return la sesión actualizada; 400 si la nueva no cumple la política; 401 si la actual no coincide
+     */
+    @PostMapping("/cambiar-contrasena")
+    public ResponseEntity<SesionDTO> cambiarContrasena(@Valid @RequestBody CambiarContrasenaDTO datos) {
+        Cuenta cuenta = credencialesService.cambiarContrasena(usuarioActualService.obtenerCuentaActual(), datos);
+        return ResponseEntity.ok(aSesion(cuenta));
+    }
+
     private void abrirSesion(Cuenta cuenta, HttpServletResponse response) {
         cookieSesionService.escribir(response, jwtService.emitir(cuenta.getId()), jwtService.getDuracionInactividad());
     }
@@ -95,6 +109,7 @@ public class AuthController {
             cuenta.getNombreCompleto(),
             cuenta.getCorreo(),
             cuenta.getRol(),
-            cuenta.getEmpresaId());
+            cuenta.getEmpresaId(),
+            cuenta.isDebeCambiarContrasena());
     }
 }
