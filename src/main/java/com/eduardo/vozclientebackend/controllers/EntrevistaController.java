@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.EntrevistaDTO;
 import com.eduardo.vozclientebackend.service.EntrevistaService;
@@ -24,6 +25,8 @@ import com.eduardo.vozclientebackend.service.EntrevistaDetalleService;
 @RequiredArgsConstructor
 public class EntrevistaController {
 
+    private final AccesoEmpresa acceso;
+
     private final EntrevistaService entrevistaService;
     private final EntrevistaDetalleService entrevistaDetalleService;
 
@@ -36,6 +39,7 @@ public class EntrevistaController {
     @PreAuthorize("hasAuthority('entrevista:gestionar')")
     @PostMapping
     public ResponseEntity<EntrevistaDTO> iniciarEntrevista(@RequestBody EntrevistaDTO entrevistaDTO) {
+        acceso.exigirSala(entrevistaDTO.salaId());
         EntrevistaDTO nuevaEntrevista = entrevistaService.iniciarEntrevista(entrevistaDTO);
         return new ResponseEntity<>(nuevaEntrevista, HttpStatus.CREATED);
     }
@@ -47,6 +51,7 @@ public class EntrevistaController {
     @PreAuthorize("hasAuthority('entrevista:leer')")
     @GetMapping("/{id}")
     public ResponseEntity<EntrevistaDTO> obtenerPorId(@PathVariable Long id) {
+        acceso.exigirEntrevista(id);
         EntrevistaDTO entrevista = entrevistaService.obtenerPorId(id);
         return ResponseEntity.ok(entrevista);
     }
@@ -58,6 +63,7 @@ public class EntrevistaController {
     @PreAuthorize("hasAuthority('entrevista:leer')")
     @GetMapping("/sala/{salaId}")
     public ResponseEntity<List<EntrevistaDTO>> obtenerPorSala(@PathVariable Long salaId) {
+        acceso.exigirSala(salaId);
         List<EntrevistaDTO> entrevistas = entrevistaService.obtenerPorSala(salaId);
         return ResponseEntity.ok(entrevistas);
     }
@@ -69,6 +75,7 @@ public class EntrevistaController {
     @PreAuthorize("hasAuthority('entrevista:leer')")
     @GetMapping("/representante/{representanteId}")
     public ResponseEntity<List<EntrevistaDTO>> obtenerPorRepresentante(@PathVariable Long representanteId) {
+        acceso.exigirCuenta(representanteId);
         List<EntrevistaDTO> entrevistas = entrevistaService.obtenerPorRepresentante(representanteId);
         return ResponseEntity.ok(entrevistas);
     }
@@ -81,6 +88,7 @@ public class EntrevistaController {
     @PreAuthorize("hasAuthority('entrevista:gestionar')")
     @PatchMapping("/{id}/finalizar")
     public ResponseEntity<EntrevistaDTO> finalizarEntrevista(@PathVariable Long id) {
+        acceso.exigirEntrevista(id);
         EntrevistaDTO entrevistaFinalizada = entrevistaService.finalizarEntrevista(id);
         return ResponseEntity.ok(entrevistaFinalizada);
     }
@@ -92,6 +100,7 @@ public class EntrevistaController {
     @PreAuthorize("hasAuthority('entrevista:gestionar')")
     @PatchMapping("/{id}/fallo")
     public ResponseEntity<EntrevistaDTO> reportarFallo(@PathVariable Long id) {
+        acceso.exigirEntrevista(id);
         EntrevistaDTO entrevistaFallida = entrevistaService.reportarFallo(id);
         return ResponseEntity.ok(entrevistaFallida);
     }

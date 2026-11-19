@@ -44,6 +44,18 @@ services:
     networks:
       - vc_network
 
+  # Servidor SMTP de desarrollo: recibe los correos y los muestra en http://localhost:8025
+  # sin enviarlos a internet. Para correo real, ver MAIL_* en .env.example.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - "127.0.0.1:8025:8025"   # bandeja web
+      - "127.0.0.1:1025:1025"   # SMTP
+    restart: unless-stopped
+    networks:
+      - vc_network
+
   spring-backend:
     build:
       context: ..
@@ -58,6 +70,8 @@ services:
         condition: service_healthy
       whisper-api:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/voz_cliente_db
       - SPRING_DATASOURCE_USERNAME=postgres
@@ -70,6 +84,15 @@ services:
       - JWT_SECRET=${JWT_SECRET:-}
       - APP_FRONTEND_URL=${APP_FRONTEND_URL:-http://localhost:4200}
       - APP_COOKIE_SEGURA=${APP_COOKIE_SEGURA:-false}
+
+      # Correo saliente. Por defecto, Mailpit (desarrollo). Para Gmail ver .env.example.
+      - MAIL_HOST=${MAIL_HOST:-mailpit}
+      - MAIL_PORT=${MAIL_PORT:-1025}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_SMTP_AUTH=${MAIL_SMTP_AUTH:-false}
+      - MAIL_STARTTLS=${MAIL_STARTTLS:-false}
+      - MAIL_REMITENTE=${MAIL_REMITENTE:-vozclientebrightcodelab@gmail.com}
 
       # IA para el Análisis de Voz del Cliente (Gemini)
       - GEMINI_API_KEY=${GEMINI_API_KEY:?Debes configurar GEMINI_API_KEY en el .env}

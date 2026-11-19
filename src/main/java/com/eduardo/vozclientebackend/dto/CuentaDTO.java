@@ -16,5 +16,7 @@ public record CuentaDTO(
         OffsetDateTime ultimoIngresoEn,
         Integer version,
         OffsetDateTime creadoEn,
-        OffsetDateTime actualizadoEn
+        OffsetDateTime actualizadoEn,
+        /** Solo al crear un representante o reenviar su contraseña: si el correo salió; nulo en el resto. */
+        Boolean correoEnviado
 ) {}

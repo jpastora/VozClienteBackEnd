@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -84,7 +85,11 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
 
         Cuenta activa = cuenta.get();
         // Rol y permisos vigentes en la base de datos (matriz de PermisosPorRol).
-        List<GrantedAuthority> permisos = PermisosPorRol.autoridades(activa.getRol());
+        // Con contraseña temporal solo se entrega el rol, sin permisos: todo endpoint protegido responde
+        // 403 hasta que la persona cambie la contraseña (/api/auth/cambiar-contrasena solo pide sesión).
+        List<GrantedAuthority> permisos = activa.isDebeCambiarContrasena()
+            ? List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + activa.getRol().name()))
+            : PermisosPorRol.autoridades(activa.getRol());
         Map<String, Object> atributos = new HashMap<>();
         atributos.put(UsuarioActualService.ATRIBUTO_CUENTA_ID, activa.getId());
         atributos.put("email", activa.getCorreo());
