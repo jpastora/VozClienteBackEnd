@@ -132,7 +132,9 @@ class RegistroGoogleServiceTest {
     }
 
     @Test
-    void registrarIngreso_cuentaYaVinculadaConContrasena_conservaLaContrasena() {
+    void registrarIngreso_cuentaYaVinculadaConContrasena_descartaLaContrasena() {
+        // Una cuenta que ingresa con Google no usa contraseña: si quedó una (por ejemplo, temporal),
+        // se descarta en cada ingreso con Google.
         Cuenta vinculada = cuenta("g-1", RolCuenta.CLIENTE_ADMINISTRADOR, EstadoCuenta.ACTIVA);
         vinculada.setContrasenaHash("$2a$10$hashPuestoDespuesDeVincular");
         when(cuentaRepository.findByGoogleSub("g-1")).thenReturn(Optional.of(vinculada));
@@ -140,7 +142,8 @@ class RegistroGoogleServiceTest {
 
         Cuenta resultado = servicio.registrarIngreso("g-1", "lrojas@atlas.com", "Laura", true);
 
-        assertThat(resultado.getContrasenaHash()).isEqualTo("$2a$10$hashPuestoDespuesDeVincular");
+        assertThat(resultado.getContrasenaHash()).isNull();
+        assertThat(resultado.isDebeCambiarContrasena()).isFalse();
     }
 
     @Test
