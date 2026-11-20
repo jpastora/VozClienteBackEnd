@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 @Service
 public class PagoSimuladoService {
 
-    /** Tarjeta de prueba que siempre se aprueba (se muestra como ejemplo en la pantalla). */
+    /** Tarjeta de prueba que siempre se aprueba (uso interno del equipo para las demos). */
     public static final String TARJETA_APROBADA = "4242424242424242";
 
     /** Tarjetas de prueba que el banco simulado rechaza, con el motivo que se informa. */
@@ -100,7 +100,7 @@ public class PagoSimuladoService {
     private static String limpiarNumero(String numeroTarjeta) {
         String numero = numeroTarjeta == null ? "" : numeroTarjeta.replaceAll("[\\s-]", "");
         if (!NUMERO.matcher(numero).matches() || !cumpleLuhn(numero)) {
-            throw invalido("El número de tarjeta no es válido. Usa una tarjeta de prueba de 16 dígitos.");
+            throw invalido("El número de tarjeta no es válido.");
         }
         return numero;
     }
