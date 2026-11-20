@@ -12,6 +12,7 @@ import com.eduardo.vozclientebackend.controllers.PaqueteController;
 import com.eduardo.vozclientebackend.controllers.ProductoController;
 import com.eduardo.vozclientebackend.controllers.RepresentanteController;
 import com.eduardo.vozclientebackend.controllers.SalaController;
+import com.eduardo.vozclientebackend.controllers.SaldoController;
 import com.eduardo.vozclientebackend.controllers.TranscripcionController;
 import com.eduardo.vozclientebackend.enums.RolCuenta;
 
@@ -41,7 +42,7 @@ class PermisosPorRolTest {
         CompraController.class, CuentaController.class, EmpresaController.class, EntrevistaController.class,
         GrabacionController.class, PaqueteController.class, ProductoController.class,
         RepresentanteController.class, SalaController.class, TranscripcionController.class,
-        GuiaController.class, AnalisisController.class, PanelGlobalController.class);
+        GuiaController.class, AnalisisController.class, PanelGlobalController.class, SaldoController.class);
 
     /** Métodos que deben quedar sin permiso porque los usa el consumidor sin cuenta (RF-08). */
     private static final Set<String> PUBLICOS = Set.of(

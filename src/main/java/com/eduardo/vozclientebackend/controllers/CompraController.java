@@ -3,7 +3,9 @@ package com.eduardo.vozclientebackend.controllers;
 import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.CompraDTO;
+import com.eduardo.vozclientebackend.dto.PagoPaqueteDTO;
 import com.eduardo.vozclientebackend.service.CompraService;
+import com.eduardo.vozclientebackend.service.UsuarioActualService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,18 +21,20 @@ public class CompraController {
     private final AccesoEmpresa acceso;
 
     private final CompraService compraService;
+    private final UsuarioActualService usuarioActualService;
 
     /**
-     * Crea una nueva compra.
+     * Compra un paquete con pago simulado para la empresa de la sesión (RF-18).
      * Endpoint: POST /api/compras
+     *
+     * <p>201 con la compra aprobada o rechazada (el estado viene en {@code estadoPago}); 400 si la
+     * tarjeta de prueba no es válida; 409 si el paquete está inactivo.</p>
      */
     @PreAuthorize("hasAuthority('compra:crear')")
     @PostMapping
-    public ResponseEntity<CompraDTO> crearCompra(@RequestBody CompraDTO compraDTO) {
-        acceso.exigirEmpresa(compraDTO.empresaId());
-        acceso.exigirCuentaActual(compraDTO.cuentaId());
-        CompraDTO nuevaCompra = compraService.crearCompra(compraDTO);
-        return new ResponseEntity<>(nuevaCompra, HttpStatus.CREATED);
+    public ResponseEntity<CompraDTO> crearCompra(@RequestBody PagoPaqueteDTO pago) {
+        CompraDTO compra = compraService.comprarPaquete(pago, usuarioActualService.obtenerCuentaActual());
+        return new ResponseEntity<>(compra, HttpStatus.CREATED);
     }
 
     /**

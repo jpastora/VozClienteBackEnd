@@ -98,7 +98,18 @@ public class PaqueteController {
     }
 
     /**
-     * Elimina físicamente un paquete.
+     * Vuelve a ofrecer un paquete desactivado.
+     * Endpoint: PATCH /api/paquetes/{id}/activar
+     */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
+    @PatchMapping("/{id}/activar")
+    public ResponseEntity<Void> activarPaquete(@PathVariable Long id) {
+        paqueteService.activarPaquete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Elimina un paquete que nunca se vendió (409 si ya tiene compras: se desactiva).
      * Endpoint: DELETE /api/paquetes/{id}
      */
     @PreAuthorize("hasAuthority('paquete:gestionar')")

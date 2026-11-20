@@ -242,6 +242,35 @@ Ejecución:
 
 URI de redirección registrados en Google Cloud: `http://localhost:8070/login/oauth2/code/google` y `http://localhost:4200/login/oauth2/code/google` (este último cuando se entra por el proxy de Angular).
 
+### 9.3 Paquetes, pago simulado y saldo de salas (RF-07, RF-17, RF-18)
+
+**Saldo de salas** (`service/SaldoSalasService.java`). No se guarda en la base de datos: se calcula cada vez, como define el modelo conceptual del ERS.
+
+- **Acreditadas:** salas de las compras con pago `APROBADO`.
+- **Consumidas:** se descuenta una sala cuando la llamada termina con una grabación correcta (`COMPLETADA`). Si la grabación falla o queda sin contenido, no se descuenta. Cada sala se descuenta una sola vez, aunque haya tenido varios intentos.
+- **Reservadas:** enlaces vigentes que todavía no se usan. No se descuentan, pero impiden generar más enlaces de los que el saldo cubre. Si el enlace vence o se elimina, la reserva se libera sola.
+- **Saldo** = acreditadas − consumidas; **disponibles** = saldo − reservadas. Ninguno de los dos es negativo.
+- `GET /api/saldo` devuelve esos cinco valores y `GET /api/saldo/consumos`, el historial de consumo. La empresa es la de la sesión; el administrador la elige con `X-Empresa-Id`.
+
+**Bloqueo sin saldo.** `POST /api/salas` responde `409` con el mensaje "Tu empresa no tiene salas disponibles…" si no hay salas disponibles. La fila de la empresa se bloquea durante la emisión, para que dos enlaces generados al mismo tiempo no usen la misma sala.
+
+> Una empresa nueva empieza con saldo 0: para generar enlaces primero hay que comprar un paquete en «Paquetes y saldo».
+
+**Compra con pago simulado** (`POST /api/compras`, `service/PagoSimuladoService.java`).
+
+- Cuerpo: `{ paqueteId, claveIdempotencia, titular, numeroTarjeta, vencimiento, cvv }`. La empresa y la cuenta salen de la sesión; el monto y las salas, del paquete; el estado del pago lo decide la pasarela simulada.
+- Validaciones: titular solo con letras, tarjeta de 16 dígitos con dígito verificador (Luhn), vencimiento `MM/AA` no vencido y CVV de 3 dígitos. Si algo no es válido, responde `400`.
+- Tarjetas de prueba: `4242 4242 4242 4242` se aprueba; `4000 0000 0000 0002` (rechazada por el banco) y `4000 0000 0000 9995` (fondos insuficientes) se rechazan. Un pago rechazado queda en el historial como `RECHAZADO` y no acredita salas.
+- El número completo y el CVV nunca se guardan ni se registran en los logs: la referencia solo conserva los últimos 4 dígitos.
+- Si el formulario se envía dos veces con la misma `claveIdempotencia`, se devuelve la compra ya registrada.
+- Una compra aprobada no se puede eliminar si sus salas ya se usaron o reservaron (`409`).
+
+**Paquetes** (`service/PaqueteService.java`, solo el administrador de la plataforma).
+
+- Nombre obligatorio, de hasta 50 caracteres y único sin importar mayúsculas (`409` si se repite). Cantidad de salas ≥ 1. Precio ≥ 0, con dos decimales como máximo.
+- Editar un paquete solo afecta las compras futuras: cada compra guarda su monto y sus salas.
+- `PATCH /api/paquetes/{id}/desactivar` deja de ofrecerlo sin tocar el saldo de quienes lo compraron, y `PATCH /api/paquetes/{id}/activar` lo vuelve a ofrecer. Un paquete que ya se vendió no se elimina (`409`): se desactiva.
+
 ## 10. Versionado
 
 - Versionado semántico `MAYOR.MENOR.PARCHE`, siempre sobre `main`.

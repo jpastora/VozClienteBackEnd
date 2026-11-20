@@ -41,6 +41,7 @@ public class SalaService {
     private final SalaMapper salaMapper;
     private final EntrevistaRepository entrevistaRepository;
     private final GrabacionRepository grabacionRepository;
+    private final SaldoSalasService saldoSalasService;
 
     /**
      * Crea una nueva sala con los datos básicos.
@@ -66,6 +67,10 @@ public class SalaService {
         Producto producto = productoRepository.findById(salaDTO.productoId())
             .orElseThrow(() -> new RuntimeException(
                 "El producto especificado no existe con ID: " + salaDTO.productoId()));
+
+        // RF-07: antes de emitir el enlace, la empresa debe tener al menos una sala disponible.
+        // Si falla algo después, la transacción se revierte y no se reserva saldo.
+        saldoSalasService.exigirSalaDisponible(producto.getEmpresaId());
 
         // 2. Mapear los datos básicos
         Sala sala = salaMapper.toEntity(salaDTO);
