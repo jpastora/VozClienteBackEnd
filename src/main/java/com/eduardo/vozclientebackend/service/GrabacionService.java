@@ -56,6 +56,7 @@ public class GrabacionService {
     private final EntrevistaRepository entrevistaRepository;
     private final EntrevistaService entrevistaService;
     private final GrabacionMapper grabacionMapper;
+    private final TranscripcionService transcripcionService;
 
     // Se lee de app.storage.grabaciones.path (variable APP_STORAGE_GRABACIONES_PATH): en Docker es
     // /app/grabaciones, la única carpeta con permiso de escritura para el usuario del contenedor.
@@ -270,7 +271,12 @@ public class GrabacionService {
                 g.setTieneAudioCliente(tieneAudioCliente);
                 g.setHashSha256(calcularHashSha256(cliente));
             }
-            return grabacionMapper.toDto(grabacionRepository.save(g));
+            Grabacion guardada = grabacionRepository.save(g);
+            if (guardada.getEstado() == EstadoGrabacion.COMPLETADA) {
+                // Se encola después del commit; no falla el cierre si la transcripción no se puede pedir.
+                transcripcionService.solicitarAutomatica(guardada.getId());
+            }
+            return grabacionMapper.toDto(guardada);
         } catch (IOException e) {
             log.error("Error al cerrar la grabación de la entrevista {}", g.getEntrevistaId(), e);
             throw new RuntimeException("Error al cerrar la grabación", e);
@@ -321,7 +327,9 @@ public class GrabacionService {
             if (g.getCreadoEn() == null) {
                 g.setCreadoEn(OffsetDateTime.now());
             }
-            return grabacionMapper.toDto(grabacionRepository.save(g));
+            Grabacion guardada = grabacionRepository.save(g);
+            transcripcionService.solicitarAutomatica(guardada.getId());
+            return grabacionMapper.toDto(guardada);
 
         } catch (IOException e) {
             log.error("Error al guardar el archivo de grabación webm para la entrevista {}", entrevistaId, e);
@@ -408,4 +416,6 @@ public class GrabacionService {
         }
     }
 }
+
+
 
