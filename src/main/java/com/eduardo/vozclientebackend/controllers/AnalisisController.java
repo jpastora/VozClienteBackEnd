@@ -1,6 +1,7 @@
 package com.eduardo.vozclientebackend.controllers;
 
 import com.eduardo.vozclientebackend.dto.AnalisisDTO;
+import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 import com.eduardo.vozclientebackend.dto.MencionCompetenciaDTO;
 import com.eduardo.vozclientebackend.service.AnalisisService;
 import org.springframework.http.HttpStatus;
@@ -15,9 +16,11 @@ import java.util.List;
 public class AnalisisController {
 
     private final AnalisisService analisisService;
+    private final AccesoEmpresa acceso;
 
-    public AnalisisController(AnalisisService analisisService) {
+    public AnalisisController(AnalisisService analisisService, AccesoEmpresa acceso) {
         this.analisisService = analisisService;
+        this.acceso = acceso;
     }
 
     /**
@@ -27,6 +30,7 @@ public class AnalisisController {
     @PreAuthorize("hasAuthority('analisis:procesar')")
     @PostMapping("/transcripciones/{transcripcionId}")
     public ResponseEntity<AnalisisDTO> procesarAnalisis(@PathVariable Long transcripcionId) {
+        acceso.exigirTranscripcion(transcripcionId);
         AnalisisDTO resultado = analisisService.procesarAnalisis(transcripcionId);
         return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
     }
@@ -38,6 +42,7 @@ public class AnalisisController {
     @PreAuthorize("hasAuthority('analisis:leer')")
     @GetMapping("/transcripciones/{transcripcionId}")
     public ResponseEntity<AnalisisDTO> obtenerAnalisisPorTranscripcion(@PathVariable Long transcripcionId) {
+        acceso.exigirTranscripcion(transcripcionId);
         AnalisisDTO resultado = analisisService.obtenerAnalisis(transcripcionId);
         return ResponseEntity.ok(resultado);
     }
@@ -49,6 +54,7 @@ public class AnalisisController {
     @PreAuthorize("hasAuthority('analisis:leer')")
     @GetMapping("/transcripciones/{transcripcionId}/menciones")
     public ResponseEntity<List<MencionCompetenciaDTO>> obtenerMencionesCompetencia(@PathVariable Long transcripcionId) {
+        acceso.exigirTranscripcion(transcripcionId);
         List<MencionCompetenciaDTO> menciones = analisisService.obtenerMencionesPorTranscripcion(transcripcionId);
 
         if (menciones.isEmpty()) {

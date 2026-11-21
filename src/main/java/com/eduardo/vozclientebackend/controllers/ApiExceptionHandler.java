@@ -120,4 +120,15 @@ public class ApiExceptionHandler {
             .body(Map.of("mensaje", ex.getMessage()));
     }
 
+
+    /** Devuelve el motivo de los errores de negocio (409, 400, 404...) para que el front lo muestre. */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> manejarEstado(
+        org.springframework.web.server.ResponseStatusException ex) {
+
+        String motivo = ex.getReason() == null ? "" : ex.getReason();
+        return ResponseEntity
+            .status(ex.getStatusCode())
+            .body(Map.of("mensaje", motivo));
+    }
 }

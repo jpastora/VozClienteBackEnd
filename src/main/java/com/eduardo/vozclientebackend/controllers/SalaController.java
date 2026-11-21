@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.SalaDTO;
@@ -16,6 +17,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SalaController {
 
+    private final AccesoEmpresa acceso;
+
     private final SalaService salaService;
 
     /**
@@ -25,6 +28,8 @@ public class SalaController {
     @PreAuthorize("hasAuthority('sala:crear')")
     @PostMapping
     public ResponseEntity<SalaDTO> crearSala(@RequestBody SalaDTO salaDTO) {
+        acceso.exigirProducto(salaDTO.productoId());
+        acceso.exigirCuentaActual(salaDTO.creadoPorId());
         SalaDTO nuevaSala = salaService.crearSala(salaDTO);
         return new ResponseEntity<>(nuevaSala, HttpStatus.CREATED);
     }
@@ -46,6 +51,7 @@ public class SalaController {
     @PreAuthorize("hasAuthority('sala:leer')")
     @GetMapping("/producto/{productoId}")
     public ResponseEntity<List<SalaDTO>> obtenerPorProducto(@PathVariable Long productoId) {
+        acceso.exigirProducto(productoId);
         List<SalaDTO> salas = salaService.obtenerPorProducto(productoId);
         return ResponseEntity.ok(salas);
     }
@@ -70,6 +76,7 @@ public class SalaController {
     @PreAuthorize("hasAuthority('sala:eliminar')")
     @DeleteMapping("/{token}")
     public ResponseEntity<Void> eliminarSala(@PathVariable String token) {
+        acceso.exigirSalaPorToken(token);
         salaService.eliminarSala(token);
         return ResponseEntity.noContent().build();
     }

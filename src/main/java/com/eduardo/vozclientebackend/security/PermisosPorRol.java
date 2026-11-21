@@ -76,6 +76,9 @@ public final class PermisosPorRol {
 
     public static final String ANALISIS_PROCESAR = "analisis:procesar";
 
+    /** Consultar el panel global de la plataforma (RF-19); solo el administrador de la plataforma. */
+    public static final String PANEL_GLOBAL_LEER = "panel:global";
+
     private static final Map<RolCuenta, Set<String>> PERMISOS = new EnumMap<>(RolCuenta.class);
 
     static {
@@ -96,11 +99,23 @@ public final class PermisosPorRol {
             ENTREVISTA_LEER, ENTREVISTA_GESTIONAR, GUIA_LEER,
             GRABACION_SUBIR));
 
+        // Administrador de la plataforma: gestiona todo en modo soporte (empresa elegida con la
+        // cabecera X-Empresa-Id) y consulta, sin modificar, entrevistas, transcripciones y análisis.
+        // No conduce videollamadas ni graba (sin entrevista:gestionar ni grabacion:subir) y no compra.
         PERMISOS.put(RolCuenta.ADMINISTRADOR, Set.of(
             CUENTA_GESTIONAR,
             EMPRESA_GESTIONAR,
+            PANEL_GLOBAL_LEER,
             PAQUETE_LEER, PAQUETE_GESTIONAR,
-            COMPRA_LEER, COMPRA_GESTIONAR));
+            COMPRA_LEER, COMPRA_GESTIONAR,
+            PRODUCTO_LEER, PRODUCTO_ESCRIBIR,
+            SALA_LEER,
+            REPRESENTANTE_GESTIONAR,
+            ENTREVISTA_LEER,
+            GRABACION_LEER,
+            TRANSCRIPCION_LEER,
+            GUIA_LEER, GUIA_CREAR, GUIA_GESTIONAR,
+            ANALISIS_LEER));
     }
 
     private PermisosPorRol() {

@@ -13,6 +13,9 @@ public interface PaqueteRepository extends JpaRepository<Paquete, Long> {
 
     Optional<Paquete> findByNombre(String nombre);
 
+    /** El nombre del paquete es único sin importar mayúsculas (RF-17). */
+    Optional<Paquete> findByNombreIgnoreCase(String nombre);
+
 
     List<Paquete> findByEsActivoTrue();
 

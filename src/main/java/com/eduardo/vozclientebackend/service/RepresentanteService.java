@@ -27,11 +27,13 @@ public class RepresentanteService {
     private final CuentaRepository cuentaRepository;
     private final CuentaMapper cuentaMapper;
     private final UsuarioActualService usuarioActualService;
+    private final ContrasenaTemporalService contrasenaTemporalService;
+    private final CorreoService correoService;
 
     @Transactional
     public CuentaDTO crearRepresentante(CrearRepresentanteDTO dto) {
 
-        Cuenta administrador = obtenerAdministradorAutorizado();
+        Long empresaId = obtenerEmpresaAutorizada();
 
         String correo = dto.correo()
             .trim()
@@ -46,13 +48,16 @@ public class RepresentanteService {
 
         Cuenta representante = new Cuenta();
 
-        representante.setEmpresaId(administrador.getEmpresaId());
+        representante.setEmpresaId(empresaId);
         representante.setNombreCompleto(dto.nombreCompleto().trim());
         representante.setCorreo(correo);
         representante.setRol(RolCuenta.REPRESENTANTE);
-        representante.setEstado(EstadoCuenta.ACTIVA);
+        // Pendiente hasta su primer ingreso (con Google o con la contraseña temporal que recibe por correo).
+        representante.setEstado(EstadoCuenta.PENDIENTE);
+        boolean usaGoogle = Boolean.TRUE.equals(dto.ingresaConGoogle());
+        String contrasenaTemporal = usaGoogle ? null : contrasenaTemporalService.asignar(representante);
 
-        // El representante vinculará Google al iniciar sesión.
+        // Si usa Google, vinculará su cuenta al iniciar sesión.
         representante.setGoogleSub(null);
         representante.setUltimoIngresoEn(null);
 
@@ -66,7 +71,13 @@ public class RepresentanteService {
 
         try {
             Cuenta guardada = cuentaRepository.saveAndFlush(representante);
-            return cuentaMapper.toDto(guardada);
+            Boolean enviado = null;
+            if (!usaGoogle) {
+                enviado = correoService.enviarContrasenaTemporal(
+                    guardada.getCorreo(), guardada.getNombreCompleto(), contrasenaTemporal,
+                    guardada.getContrasenaTemporalVenceEn());
+            }
+            return conEnvio(cuentaMapper.toDto(guardada), enviado);
 
         } catch (DataIntegrityViolationException ex) {
             throw new ResponseStatusException(
@@ -80,11 +91,11 @@ public class RepresentanteService {
     @Transactional(readOnly = true)
     public List<CuentaDTO> listarRepresentantes() {
 
-        Cuenta administrador = obtenerAdministradorAutorizado();
+        Long empresaId = obtenerEmpresaAutorizada();
 
         List<Cuenta> representantes =
             cuentaRepository.findByEmpresaIdAndRolOrderByNombreCompletoAsc(
-                administrador.getEmpresaId(),
+                empresaId,
                 RolCuenta.REPRESENTANTE
             );
 
@@ -94,12 +105,12 @@ public class RepresentanteService {
     @Transactional(readOnly = true)
     public CuentaDTO obtenerRepresentante(Long id) {
 
-        Cuenta administrador = obtenerAdministradorAutorizado();
+        Long empresaId = obtenerEmpresaAutorizada();
 
         Cuenta representante = cuentaRepository
             .findByIdAndEmpresaIdAndRol(
                 id,
-                administrador.getEmpresaId(),
+                empresaId,
                 RolCuenta.REPRESENTANTE
             )
             .orElseThrow(() -> new ResponseStatusException(
@@ -110,15 +121,50 @@ public class RepresentanteService {
         return cuentaMapper.toDto(representante);
     }
 
+    /** Genera una contraseña temporal nueva para un representante de la empresa y la envía por correo. */
+    @Transactional
+    public CuentaDTO reenviarContrasenaTemporal(Long id) {
+
+        Long empresaId = obtenerEmpresaAutorizada();
+
+        Cuenta representante = cuentaRepository
+            .findByIdAndEmpresaIdAndRol(id, empresaId, RolCuenta.REPRESENTANTE)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Representante no encontrado"
+            ));
+
+        if (representante.getEstado() == EstadoCuenta.INACTIVA) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "El representante está desactivado"
+            );
+        }
+
+        String contrasena = contrasenaTemporalService.asignar(representante);
+        representante.setActualizadoEn(OffsetDateTime.now());
+        Cuenta guardada = cuentaRepository.saveAndFlush(representante);
+
+        boolean enviado = correoService.enviarContrasenaTemporal(
+            guardada.getCorreo(), guardada.getNombreCompleto(), contrasena,
+            guardada.getContrasenaTemporalVenceEn());
+        return conEnvio(cuentaMapper.toDto(guardada), enviado);
+    }
+
+    private static CuentaDTO conEnvio(CuentaDTO d, Boolean enviado) {
+        return new CuentaDTO(d.id(), d.empresaId(), d.nombreCompleto(), d.correo(), d.googleSub(),
+            d.rol(), d.estado(), d.ultimoIngresoEn(), d.version(), d.creadoEn(), d.actualizadoEn(), enviado);
+    }
+
     @Transactional
     public CuentaDTO desactivarRepresentante(Long id) {
 
-        Cuenta administrador = obtenerAdministradorAutorizado();
+        Long empresaId = obtenerEmpresaAutorizada();
 
         Cuenta representante = cuentaRepository
             .findByIdAndEmpresaIdAndRol(
                 id,
-                administrador.getEmpresaId(),
+                empresaId,
                 RolCuenta.REPRESENTANTE
             )
             .orElseThrow(() -> new ResponseStatusException(
@@ -141,7 +187,11 @@ public class RepresentanteService {
         return cuentaMapper.toDto(actualizada);
     }
 
-    private Cuenta obtenerAdministradorAutorizado() {
+    /**
+     * Empresa sobre la que se gestionan los representantes: la propia del cliente-administrador o,
+     * para el administrador de la plataforma, la empresa elegida en modo soporte.
+     */
+    private Long obtenerEmpresaAutorizada() {
 
         Cuenta usuario = usuarioActualService.obtenerCuentaActual();
 
@@ -152,20 +202,14 @@ public class RepresentanteService {
             );
         }
 
-        if (usuario.getRol() != RolCuenta.CLIENTE_ADMINISTRADOR) {
+        if (usuario.getRol() != RolCuenta.CLIENTE_ADMINISTRADOR
+            && usuario.getRol() != RolCuenta.ADMINISTRADOR) {
             throw new ResponseStatusException(
                 HttpStatus.FORBIDDEN,
                 "No tiene permisos para administrar representantes"
             );
         }
 
-        if (usuario.getEmpresaId() == null) {
-            throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "La cuenta no tiene una empresa asignada"
-            );
-        }
-
-        return usuario;
+        return usuarioActualService.empresaEfectiva();
     }
 }

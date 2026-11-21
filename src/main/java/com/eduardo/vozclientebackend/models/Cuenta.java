@@ -42,6 +42,14 @@ public class Cuenta {
     @Column(name = "contrasena_hash", length = 100)
     private String contrasenaHash;
 
+    /** Verdadero mientras la contraseña es temporal: la persona debe cambiarla al ingresar. */
+    @Column(name = "debe_cambiar_contrasena", nullable = false)
+    private boolean debeCambiarContrasena;
+
+    /** Vencimiento de la contraseña temporal; nulo si no hay una vigente. */
+    @Column(name = "contrasena_temporal_vence_en")
+    private OffsetDateTime contrasenaTemporalVenceEn;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private RolCuenta rol;

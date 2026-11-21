@@ -171,15 +171,7 @@ public class EntrevistaService {
                 "La página no puede ser negativa");
         }
 
-        Long empresaId = usuarioActualService
-            .obtenerCuentaActual()
-            .getEmpresaId();
-
-        if (empresaId == null) {
-            throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "El usuario no tiene empresa asignada");
-        }
+        Long empresaId = usuarioActualService.empresaEfectiva();
 
         EstadoEntrevista filtroEstado = null;
 
@@ -223,14 +215,7 @@ public class EntrevistaService {
                 "La página no puede ser negativa");
         }
 
-        Long empresaId = usuarioActualService
-            .obtenerCuentaActual()
-            .getEmpresaId();
-
-        if (empresaId == null) {
-            throw new IllegalStateException(
-                "El usuario no tiene empresa asignada");
-        }
+        Long empresaId = usuarioActualService.empresaEfectiva();
 
         EstadoEntrevista filtroEstado = null;
 

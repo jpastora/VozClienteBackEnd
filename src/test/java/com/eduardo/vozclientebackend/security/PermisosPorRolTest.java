@@ -1,14 +1,18 @@
 package com.eduardo.vozclientebackend.security;
 
+import com.eduardo.vozclientebackend.controllers.AnalisisController;
 import com.eduardo.vozclientebackend.controllers.CompraController;
 import com.eduardo.vozclientebackend.controllers.CuentaController;
 import com.eduardo.vozclientebackend.controllers.EmpresaController;
 import com.eduardo.vozclientebackend.controllers.EntrevistaController;
 import com.eduardo.vozclientebackend.controllers.GrabacionController;
+import com.eduardo.vozclientebackend.controllers.GuiaController;
+import com.eduardo.vozclientebackend.controllers.PanelGlobalController;
 import com.eduardo.vozclientebackend.controllers.PaqueteController;
 import com.eduardo.vozclientebackend.controllers.ProductoController;
 import com.eduardo.vozclientebackend.controllers.RepresentanteController;
 import com.eduardo.vozclientebackend.controllers.SalaController;
+import com.eduardo.vozclientebackend.controllers.SaldoController;
 import com.eduardo.vozclientebackend.controllers.TranscripcionController;
 import com.eduardo.vozclientebackend.enums.RolCuenta;
 
@@ -37,7 +41,8 @@ class PermisosPorRolTest {
     private static final List<Class<?>> CONTROLLERS = List.of(
         CompraController.class, CuentaController.class, EmpresaController.class, EntrevistaController.class,
         GrabacionController.class, PaqueteController.class, ProductoController.class,
-        RepresentanteController.class, SalaController.class, TranscripcionController.class);
+        RepresentanteController.class, SalaController.class, TranscripcionController.class,
+        GuiaController.class, AnalisisController.class, PanelGlobalController.class, SaldoController.class);
 
     /** Métodos que deben quedar sin permiso porque los usa el consumidor sin cuenta (RF-08). */
     private static final Set<String> PUBLICOS = Set.of(
@@ -65,10 +70,22 @@ class PermisosPorRolTest {
     }
 
     @Test
-    void autoridades_administrador_gestionaCuentasYPaquetesPeroNoProductos() {
+    void autoridades_administrador_tieneAccesoCompletoPeroNoConduceEntrevistas() {
         assertThat(autoridades(RolCuenta.ADMINISTRADOR))
-            .contains("ROLE_ADMINISTRADOR", "cuenta:gestionar", "paquete:gestionar", "empresa:gestionar")
-            .doesNotContain("producto:leer", "producto:escribir");
+            .contains("ROLE_ADMINISTRADOR", "cuenta:gestionar", "paquete:gestionar", "empresa:gestionar",
+                "panel:global", "compra:gestionar",
+                "producto:leer", "producto:escribir", "representante:gestionar",
+                "guia:leer", "guia:crear", "guia:gestionar", "sala:leer",
+                "entrevista:leer", "grabacion:leer", "transcripcion:leer", "analisis:leer")
+            // Conducir la videollamada, grabar, comprar y reprocesar queda para quienes operan la empresa.
+            .doesNotContain("entrevista:gestionar", "grabacion:subir", "compra:crear",
+                "transcripcion:gestionar", "analisis:procesar", "sala:crear", "sala:eliminar");
+    }
+
+    @Test
+    void autoridades_soloElAdministrador_vePanelGlobalYGestionaCuentas() {
+        assertThat(autoridades(RolCuenta.CLIENTE_ADMINISTRADOR)).doesNotContain("panel:global", "cuenta:gestionar");
+        assertThat(autoridades(RolCuenta.REPRESENTANTE)).doesNotContain("panel:global", "cuenta:gestionar");
     }
 
     @Test

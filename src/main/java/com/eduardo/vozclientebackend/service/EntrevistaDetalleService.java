@@ -31,15 +31,7 @@ public class EntrevistaDetalleService {
     @Transactional(readOnly = true)
     public EntrevistaDetalleDTO obtenerDetalle(Long id) {
 
-        Long empresaId = usuarioActualService
-            .obtenerCuentaActual()
-            .getEmpresaId();
-
-        if (empresaId == null) {
-            throw new ResponseStatusException(
-                HttpStatus.FORBIDDEN,
-                "El usuario no tiene empresa asignada");
-        }
+        Long empresaId = usuarioActualService.empresaEfectiva();
 
         Entrevista entrevista = entrevistaRepository
             .findById(id)

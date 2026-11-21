@@ -35,17 +35,7 @@ public class ProductoService {
     private final CuentaRepository cuentaRepository;
 
     private Long obtenerEmpresaId() {
-        Long empresaId = usuarioActualService
-            .obtenerCuentaActual()
-            .getEmpresaId();
-
-        if (empresaId == null) {
-            throw new IllegalStateException(
-                "El usuario no tiene una empresa asignada."
-            );
-        }
-
-        return empresaId;
+        return usuarioActualService.empresaEfectiva();
     }
 
     private boolean esRepresentante(Cuenta cuenta) {
