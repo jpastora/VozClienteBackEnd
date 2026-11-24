@@ -18,6 +18,8 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
     // Buscar una cuenta por correo electrónico
     Optional<Cuenta> findByCorreo(String correo);
 
+    long countByEmpresaId(Long empresaId);
+
     // Buscar por identificador de Google
     Optional<Cuenta> findByGoogleSub(String googleSub);
 

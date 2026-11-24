@@ -41,6 +41,11 @@ public final class PermisosPorRol {
     public static final String REPRESENTANTE_GESTIONAR = "representante:gestionar";
     /** Consultar entrevistas. */
     public static final String ENTREVISTA_LEER = "entrevista:leer";
+    /**
+     * Eliminar productos, representantes y entrevistas (con validación de integridad). Solo el
+     * administrador de la plataforma; el resto de los roles desactiva en lugar de eliminar.
+     */
+    public static final String DATOS_ELIMINAR = "datos:eliminar";
     /** Iniciar, finalizar y reportar fallas de entrevistas. */
     public static final String ENTREVISTA_GESTIONAR = "entrevista:gestionar";
     /** Consultar grabaciones. */
@@ -111,7 +116,7 @@ public final class PermisosPorRol {
             PRODUCTO_LEER, PRODUCTO_ESCRIBIR,
             SALA_LEER,
             REPRESENTANTE_GESTIONAR,
-            ENTREVISTA_LEER,
+            ENTREVISTA_LEER, DATOS_ELIMINAR,
             GRABACION_LEER,
             TRANSCRIPCION_LEER,
             GUIA_LEER, GUIA_CREAR, GUIA_GESTIONAR,

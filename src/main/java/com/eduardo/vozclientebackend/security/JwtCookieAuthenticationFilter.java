@@ -87,7 +87,8 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
         // Rol y permisos vigentes en la base de datos (matriz de PermisosPorRol).
         // Con contraseña temporal solo se entrega el rol, sin permisos: todo endpoint protegido responde
         // 403 hasta que la persona cambie la contraseña (/api/auth/cambiar-contrasena solo pide sesión).
-        List<GrantedAuthority> permisos = activa.isDebeCambiarContrasena()
+        // Lo mismo mientras falte completar el perfil (/api/auth/completar-perfil solo pide sesión).
+        List<GrantedAuthority> permisos = (activa.isDebeCambiarContrasena() || !activa.isPerfilCompleto())
             ? List.<GrantedAuthority>of(new SimpleGrantedAuthority("ROLE_" + activa.getRol().name()))
             : PermisosPorRol.autoridades(activa.getRol());
         Map<String, Object> atributos = new HashMap<>();

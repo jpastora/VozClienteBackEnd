@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.service.EliminacionService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.CrearRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
@@ -20,6 +21,7 @@ import java.util.List;
 public class RepresentanteController {
 
     private final RepresentanteService representanteService;
+    private final EliminacionService eliminacion;
 
     /**
      * POST /api/representantes. Registra un representante.
@@ -76,6 +78,14 @@ public class RepresentanteController {
     }
 
     @PreAuthorize("hasAuthority('representante:gestionar')")
+    @PatchMapping("/{id}/activar")
+    public ResponseEntity<CuentaDTO> activarRepresentante(
+        @PathVariable Long id) {
+
+        return ResponseEntity.ok(representanteService.activarRepresentante(id));
+    }
+
+    @PreAuthorize("hasAuthority('representante:gestionar')")
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<CuentaDTO> desactivarRepresentante(
         @PathVariable Long id) {
@@ -84,5 +94,13 @@ public class RepresentanteController {
             representanteService.desactivarRepresentante(id);
 
         return ResponseEntity.ok(representante);
+    }
+
+    /** Elimina un representante solo si no tiene datos relacionados; si los tiene responde 409 con el detalle. */
+    @PreAuthorize("hasAuthority('datos:eliminar')")
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarRepresentante(@PathVariable Long id) {
+        eliminacion.eliminarRepresentante(id);
+        return ResponseEntity.noContent().build();
     }
 }

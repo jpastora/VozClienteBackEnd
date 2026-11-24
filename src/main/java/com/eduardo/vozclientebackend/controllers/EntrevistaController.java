@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.service.EliminacionService;
 import com.eduardo.vozclientebackend.security.AccesoEmpresa;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.EntrevistaDTO;
@@ -28,6 +29,7 @@ public class EntrevistaController {
     private final AccesoEmpresa acceso;
 
     private final EntrevistaService entrevistaService;
+    private final EliminacionService eliminacion;
     private final EntrevistaDetalleService entrevistaDetalleService;
 
 
@@ -144,4 +146,13 @@ public class EntrevistaController {
         );
     }
 
+
+    /** Elimina una entrevista fallida o en curso sin grabación; las demás responden 409. */
+    @PreAuthorize("hasAuthority('datos:eliminar')")
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarEntrevista(@PathVariable Long id) {
+        acceso.exigirEntrevista(id);
+        eliminacion.eliminarEntrevista(id);
+        return ResponseEntity.noContent().build();
+    }
 }

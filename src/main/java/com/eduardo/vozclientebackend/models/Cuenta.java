@@ -47,6 +47,10 @@ public class Cuenta {
     private boolean debeCambiarContrasena;
 
     /** Vencimiento de la contraseña temporal; nulo si no hay una vigente. */
+    /** Falso hasta que la persona complete nombre y empresa tras su primer ingreso con Google. */
+    @Column(name = "perfil_completo", nullable = false)
+    private boolean perfilCompleto = true;
+
     @Column(name = "contrasena_temporal_vence_en")
     private OffsetDateTime contrasenaTemporalVenceEn;
 

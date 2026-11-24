@@ -16,6 +16,11 @@ import java.util.Optional;
 public interface ProductoRepository
     extends JpaRepository<Producto, Long> {
 
+    /** Productos asignados a un representante. */
+    long countByRepresentanteId(Long representanteId);
+
+    long countByEmpresaId(Long empresaId);
+
     Optional<Producto> findByIdAndEmpresaId(
         Long id,
         Long empresaId
