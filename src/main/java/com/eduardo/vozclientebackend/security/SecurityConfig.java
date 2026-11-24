@@ -73,7 +73,7 @@ public class SecurityConfig {
                 .requestMatchers("/oauth2/**", "/login/oauth2/**", "/error").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // Ingreso y registro con correo y contraseña
-                .requestMatchers(HttpMethod.POST, "/api/auth/ingresar", "/api/auth/registro").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/ingresar", "/api/auth/registro", "/api/auth/recuperar").permitAll()
                 // Consumidor sin cuenta: consultar el enlace, aceptar la grabación y la señalización (RF-08, RF-09)
                 .requestMatchers(HttpMethod.GET, "/api/salas/*").permitAll()
                 .requestMatchers(HttpMethod.PATCH, "/api/salas/*/responder").permitAll()

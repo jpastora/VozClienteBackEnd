@@ -69,6 +69,31 @@ public class CorreoService {
         return enviar(destino, "Tu acceso a VozCliente", texto);
     }
 
+    /**
+     * Envía una contraseña temporal a quien pidió recuperar su acceso ("¿Olvidó su contraseña?").
+     *
+     * @return {@code true} si el servidor de correo aceptó el mensaje
+     */
+    public boolean enviarRecuperacionContrasena(String destino, String nombre, String contrasenaTemporal,
+                                                OffsetDateTime venceEn) {
+        String vence = FORMATO_FECHA.format(venceEn.atZoneSameInstant(ZoneId.of("America/Costa_Rica")));
+        String texto = """
+            Hola %s,
+
+            Recibimos una solicitud para recuperar el acceso a tu cuenta de VozCliente. Para ingresar usa:
+
+              Correo: %s
+              Contraseña temporal: %s
+
+            Ingresa en %s. Al entrar, el sistema te pedirá elegir una contraseña nueva.
+            La contraseña temporal vence el %s (hora de Costa Rica).
+
+            Si no pediste este cambio, ingresa con esta contraseña temporal y elige una nueva, o avisa
+            al administrador de tu empresa.
+            """.formatted(nombre, destino, contrasenaTemporal, urlAplicacion, vence);
+        return enviar(destino, "Recupera tu acceso a VozCliente", texto);
+    }
+
     private boolean enviar(String destino, String asunto, String texto) {
         try {
             MimeMessage mensaje = mailSender.createMimeMessage();
