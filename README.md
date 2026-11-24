@@ -231,7 +231,11 @@ Ejecución:
 - Las contraseñas se guardan solo como hash BCrypt (columna `cuentas.contrasena_hash`, migración V7). Deben tener entre 8 y 20 caracteres, con al menos una mayúscula, una minúscula y un número. En el registro, el nombre completo solo admite letras (con tildes) y espacios.
 - Correo inexistente y contraseña incorrecta responden el mismo `401`, para no revelar qué correos están registrados. Ambos ingresos dejan la misma cookie de sesión `VC_SESION`.
 - Después de 5 intentos fallidos seguidos con el mismo correo (en 15 minutos), el ingreso con ese correo se bloquea 15 minutos y responde `429` (`security/LimiteIntentosIngreso.java`). También cuentan los correos que no existen, para que el bloqueo no revele cuáles están registrados. El conteo vive en memoria: alcanza para una sola instancia del back-end.
-- **Riesgo conocido (iteración 2):** el registro todavía no verifica el correo, porque el proyecto no tiene servidor de correo. Para que nadie conserve el acceso a una cuenta creada con un correo ajeno, cuando una cuenta con contraseña se vincula por primera vez con Google, la contraseña se borra y la cuenta sigue con Google. Pendiente para la iteración 2: verificación del correo al registrarse y recuperación de contraseña por correo (la pantalla ya existe en el front-end).
+- **¿Olvidó su contraseña?** (`POST /api/auth/recuperar` con `{ correo }`, `service/RecuperacionContrasenaService.java`): si el correo pertenece a una cuenta activa o pendiente que ingresa con contraseña, se le asigna una contraseña temporal (la misma de `ContrasenaTemporalService`) y se envía por correo. Al ingresar con ella, el sistema obliga a elegir una contraseña nueva.
+  - Responde siempre `202` con el mismo mensaje, exista o no el correo, y el correo se envía en segundo plano después de guardar, para no revelar qué correos están registrados.
+  - Las cuentas vinculadas a Google y las inactivas no reciben contraseña.
+  - Máximo 3 solicitudes por correo cada 30 minutos; las demás se ignoran en silencio.
+- **Riesgo conocido:** el registro todavía no verifica que el correo sea de quien se registra. Para que nadie conserve el acceso a una cuenta creada con un correo ajeno, cuando una cuenta con contraseña se vincula con Google, la contraseña se borra y la cuenta sigue con Google. Siguiente paso: enviar un enlace de verificación al registrarse, con el mismo servicio de correo.
 
 ### 9.2 Permisos por rol (RF-02)
 
