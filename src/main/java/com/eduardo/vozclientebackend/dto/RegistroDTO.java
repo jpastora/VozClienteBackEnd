@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Size;
  * @param nombreCompleto nombre de la persona (2 a 100 caracteres)
  * @param correo         correo de la cuenta; único en la plataforma
  * @param contrasena     contraseña en texto plano; se guarda solo su hash BCrypt
+ * @param nombreEmpresa  nombre de la empresa que se crea (2 a 150 caracteres)
  */
 public record RegistroDTO(
 
@@ -27,7 +28,16 @@ public record RegistroDTO(
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, max = 20, message = "La contraseña debe tener entre 8 y 20 caracteres")
-    String contrasena
+    String contrasena,
+
+    @NotBlank(message = "El nombre de la empresa es obligatorio")
+    @Size(min = 2, max = 150, message = "El nombre de la empresa debe tener entre 2 y 150 caracteres")
+    String nombreEmpresa
 
 ) {
+
+    /** Sin nombre de empresa: la empresa se llama "Empresa de" más el nombre de la persona. */
+    public RegistroDTO(String nombreCompleto, String correo, String contrasena) {
+        this(nombreCompleto, correo, contrasena, null);
+    }
 }

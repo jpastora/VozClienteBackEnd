@@ -6,6 +6,7 @@ import com.eduardo.vozclientebackend.exceptions.SalaNoEliminableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -72,6 +73,15 @@ public class ApiExceptionHandler {
             .body(respuesta);
     }
 
+
+    /** Red de seguridad: una restricción de la base impidió la operación (p. ej. una relación activa). */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> manejarIntegridad(DataIntegrityViolationException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(Map.of("mensaje",
+                "No se puede completar la operación: otros registros dependen de este o los datos chocan con uno existente."));
+    }
 
     @ExceptionHandler(ProductoDuplicadoException.class)
     public ResponseEntity<Map<String, Object>> manejarDuplicado(

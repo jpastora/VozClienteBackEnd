@@ -11,6 +11,7 @@ import com.eduardo.vozclientebackend.enums.RolCuenta;
  * @param rol            rol vigente de la cuenta
  * @param empresaId      empresa de la cuenta; nulo para el administrador de la plataforma
  * @param debeCambiarContrasena verdadero si la contraseña es temporal y hay que cambiarla antes de seguir
+ * @param perfilCompleto        falso si falta completar nombre y empresa tras el primer ingreso con Google
  */
 public record SesionDTO(
     Long id,
@@ -18,6 +19,7 @@ public record SesionDTO(
     String correo,
     RolCuenta rol,
     Long empresaId,
-    boolean debeCambiarContrasena
+    boolean debeCambiarContrasena,
+    boolean perfilCompleto
 ) {
 }

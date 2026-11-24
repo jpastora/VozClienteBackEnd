@@ -11,6 +11,7 @@ import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.repository.CambioRolRepository;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.EmpresaRepository;
+import com.eduardo.vozclientebackend.repository.ProductoRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,9 @@ class CuentaServiceTest {
     private EmpresaRepository empresaRepository;
 
     @Mock
+    private ProductoRepository productoRepository;
+
+    @Mock
     private UsuarioActualService usuarioActualService;
 
     @Mock
@@ -66,7 +70,7 @@ class CuentaServiceTest {
         Clock reloj = Clock.fixed(AHORA, ZoneOffset.UTC);
         ContrasenaTemporalService temporal = new ContrasenaTemporalService(new BCryptPasswordEncoder(4), reloj);
         servicio = new CuentaService(cuentaRepository, cambioRolRepository, empresaRepository,
-            usuarioActualService, temporal, correoService, reloj);
+            productoRepository, usuarioActualService, temporal, correoService, reloj);
 
         admin = cuenta(1L, RolCuenta.ADMINISTRADOR, null, EstadoCuenta.ACTIVA, 3);
         lenient().when(usuarioActualService.obtenerCuentaActual()).thenReturn(admin);

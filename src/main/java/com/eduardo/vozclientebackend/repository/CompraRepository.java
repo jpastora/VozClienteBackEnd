@@ -17,6 +17,10 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
 
     List<Compra> findByCuentaId(Long cuentaId);
 
+    long countByCuentaId(Long cuentaId);
+
+    long countByEmpresaId(Long empresaId);
+
     List<Compra> findByPaqueteId(Long paqueteId);
 
     /** Si existe, la compra ya registrada con esa clave (doble envío del formulario). */

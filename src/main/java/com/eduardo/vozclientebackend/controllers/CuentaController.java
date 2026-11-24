@@ -1,10 +1,12 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.service.EliminacionService;
 import com.eduardo.vozclientebackend.dto.CambiarEstadoRequestDTO;
 import com.eduardo.vozclientebackend.dto.CambiarRolRequestDTO;
 import com.eduardo.vozclientebackend.dto.CambioRolDTO;
 import com.eduardo.vozclientebackend.dto.CrearCuentaDTO;
 import com.eduardo.vozclientebackend.dto.CuentaGlobalDTO;
+import com.eduardo.vozclientebackend.dto.EditarCuentaDTO;
 import com.eduardo.vozclientebackend.service.CuentaService;
 
 import jakarta.validation.Valid;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,6 +35,7 @@ import java.util.List;
 public class CuentaController {
 
     private final CuentaService cuentaService;
+    private final EliminacionService eliminacion;
 
     /** POST /api/cuentas. Crea una cuenta con cualquier rol y envía la contraseña temporal. */
     @PreAuthorize("hasAuthority('cuenta:gestionar')")
@@ -46,6 +50,14 @@ public class CuentaController {
     public ResponseEntity<List<CuentaGlobalDTO>> listarCuentas(
         @RequestParam(required = false) Long empresaId) {
         return ResponseEntity.ok(cuentaService.listarCuentas(empresaId));
+    }
+
+    /** PUT /api/cuentas/{id}. Edita nombre, correo y empresa de una cuenta. */
+    @PreAuthorize("hasAuthority('cuenta:gestionar')")
+    @PutMapping("/{id}")
+    public ResponseEntity<CuentaGlobalDTO> editarCuenta(
+        @PathVariable Long id, @Valid @RequestBody EditarCuentaDTO request) {
+        return ResponseEntity.ok(cuentaService.editarCuenta(id, request));
     }
 
     /** PATCH /api/cuentas/{id}/rol. Cambia el rol de una cuenta. */
@@ -76,5 +88,13 @@ public class CuentaController {
     @GetMapping("/{id}/cambios-rol")
     public ResponseEntity<List<CambioRolDTO>> obtenerHistorial(@PathVariable Long id) {
         return ResponseEntity.ok(cuentaService.obtenerHistorial(id));
+    }
+
+    /** Elimina una cuenta solo si no tiene datos relacionados; si los tiene responde 409 con el detalle. */
+    @PreAuthorize("hasAuthority('cuenta:gestionar')")
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarCuenta(@PathVariable Long id) {
+        eliminacion.eliminarCuenta(id);
+        return ResponseEntity.noContent().build();
     }
 }

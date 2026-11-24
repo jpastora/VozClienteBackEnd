@@ -126,6 +126,8 @@ public class RegistroGoogleService {
         cuenta.setGoogleSub(googleSub);
         cuenta.setRol(RolCuenta.CLIENTE_ADMINISTRADOR);
         cuenta.setEstado(EstadoCuenta.ACTIVA);
+        // Debe confirmar su nombre y poner el de su empresa antes de usar la aplicación.
+        cuenta.setPerfilCompleto(false);
         cuenta.setCreadoEn(ahora);
         cuenta.setActualizadoEn(ahora);
         return cuenta;

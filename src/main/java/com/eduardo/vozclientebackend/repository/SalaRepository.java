@@ -23,6 +23,10 @@ public interface SalaRepository extends JpaRepository<Sala, Long> {
     // Obtiene todas las salas asociadas a un producto específico
     List<Sala> findByProductoId(Long productoId);
 
+    long countByProductoId(Long productoId);
+
+    long countByCreadoPorId(Long creadoPorId);
+
     // Obtiene todas las salas creadas por un usuario/cliente específico
     List<Sala> findByCreadoPorId(Long creadoPorId);
 

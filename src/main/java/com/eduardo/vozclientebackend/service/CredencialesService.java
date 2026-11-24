@@ -1,6 +1,7 @@
 package com.eduardo.vozclientebackend.service;
 
 import com.eduardo.vozclientebackend.dto.CambiarContrasenaDTO;
+import com.eduardo.vozclientebackend.dto.CompletarPerfilDTO;
 import com.eduardo.vozclientebackend.dto.IngresoDTO;
 import com.eduardo.vozclientebackend.dto.RegistroDTO;
 import com.eduardo.vozclientebackend.enums.EstadoCuenta;
@@ -131,7 +132,16 @@ public class CredencialesService {
         String nombre = datos.nombreCompleto().trim();
 
         Empresa empresa = new Empresa();
-        String nombreEmpresa = "Empresa de " + nombre;
+        String nombreEmpresa;
+        if (datos.nombreEmpresa() == null || datos.nombreEmpresa().isBlank()) {
+            nombreEmpresa = "Empresa de " + nombre;
+        } else {
+            nombreEmpresa = datos.nombreEmpresa().trim();
+            if (empresaRepository.existsByNombreIgnoreCase(nombreEmpresa)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya existe una empresa con ese nombre");
+            }
+        }
         empresa.setNombre(nombreEmpresa.length() <= LARGO_MAXIMO_EMPRESA
             ? nombreEmpresa : nombreEmpresa.substring(0, LARGO_MAXIMO_EMPRESA));
         empresa.setCreadoEn(ahora);
@@ -147,6 +157,37 @@ public class CredencialesService {
         cuenta.setEstado(EstadoCuenta.ACTIVA);
         cuenta.setUltimoIngresoEn(ahora);
         cuenta.setCreadoEn(ahora);
+        cuenta.setActualizadoEn(ahora);
+        return cuentaRepository.save(cuenta);
+    }
+
+    /**
+     * Completa el perfil tras el primer ingreso con Google: confirma el nombre de la persona y
+     * pone el nombre real de su empresa.
+     *
+     * @throws ResponseStatusException 409 si el perfil ya estaba completo o si otra empresa ya usa ese nombre
+     */
+    @Transactional
+    public Cuenta completarPerfil(Cuenta cuenta, CompletarPerfilDTO datos) {
+        if (cuenta.isPerfilCompleto()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El perfil ya está completo");
+        }
+        Empresa empresa = empresaRepository.findById(cuenta.getEmpresaId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa no encontrada"));
+
+        String nombreEmpresa = datos.nombreEmpresa().trim();
+        if (!nombreEmpresa.equalsIgnoreCase(empresa.getNombre())
+            && empresaRepository.existsByNombreIgnoreCase(nombreEmpresa)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una empresa con ese nombre");
+        }
+
+        OffsetDateTime ahora = OffsetDateTime.now(reloj);
+        empresa.setNombre(nombreEmpresa);
+        empresa.setActualizadoEn(ahora);
+        empresaRepository.save(empresa);
+
+        cuenta.setNombreCompleto(datos.nombreCompleto().trim());
+        cuenta.setPerfilCompleto(true);
         cuenta.setActualizadoEn(ahora);
         return cuentaRepository.save(cuenta);
     }

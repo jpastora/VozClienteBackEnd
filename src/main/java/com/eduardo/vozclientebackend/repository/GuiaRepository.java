@@ -13,4 +13,8 @@ public interface GuiaRepository extends JpaRepository<Guia, Long> {
     List<Guia> findAllByEmpresaId(Long empresaId);
 
     List<Guia> findAllByCuentaId(Long cuentaId);
+
+    long countByCuentaId(Long cuentaId);
+
+    long countByEmpresaId(Long empresaId);
 }
