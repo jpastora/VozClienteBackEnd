@@ -1,13 +1,16 @@
 package com.eduardo.vozclientebackend.controllers;
 
 import com.eduardo.vozclientebackend.dto.CambiarContrasenaDTO;
+import com.eduardo.vozclientebackend.dto.CompletarPerfilDTO;
 import com.eduardo.vozclientebackend.dto.IngresoDTO;
+import com.eduardo.vozclientebackend.dto.RecuperarContrasenaDTO;
 import com.eduardo.vozclientebackend.dto.RegistroDTO;
 import com.eduardo.vozclientebackend.dto.SesionDTO;
 import com.eduardo.vozclientebackend.models.Cuenta;
 import com.eduardo.vozclientebackend.security.CookieSesionService;
 import com.eduardo.vozclientebackend.security.JwtService;
 import com.eduardo.vozclientebackend.service.CredencialesService;
+import com.eduardo.vozclientebackend.service.RecuperacionContrasenaService;
 import com.eduardo.vozclientebackend.service.UsuarioActualService;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 /**
  * Sesión del usuario (HU-01).
  *
@@ -30,6 +35,9 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>Ingreso con Google: el front-end navega a {@code /oauth2/authorization/google}.</li>
  *   <li>{@code POST /api/auth/ingresar}: ingreso con correo y contraseña.</li>
  *   <li>{@code POST /api/auth/registro}: crea la empresa y la cuenta de cliente-administrador.</li>
+ *   <li>{@code POST /api/auth/recuperar}: envía una contraseña temporal al correo ("¿Olvidó su
+ *       contraseña?"); responde 202 con el mismo mensaje exista o no la cuenta.</li>
+ *   <li>{@code POST /api/auth/completar-perfil}: nombre y empresa tras el primer ingreso con Google.</li>
  *   <li>{@code GET /api/auth/yo}: datos de la persona con sesión; 401 si no hay sesión.</li>
  *   <li>{@code POST /api/auth/salir}: cierra la sesión (lo atiende Spring Security, ver
  *       {@code SecurityConfig}); responde 204.</li>
@@ -45,6 +53,7 @@ public class AuthController {
 
     private final UsuarioActualService usuarioActualService;
     private final CredencialesService credencialesService;
+    private final RecuperacionContrasenaService recuperacionContrasenaService;
     private final JwtService jwtService;
     private final CookieSesionService cookieSesionService;
 
@@ -87,6 +96,34 @@ public class AuthController {
     }
 
     /**
+     * "¿Olvidó su contraseña?": si el correo pertenece a una cuenta que ingresa con contraseña, le
+     * envía una contraseña temporal. La respuesta es siempre la misma, para no revelar qué correos
+     * están registrados.
+     *
+     * @param datos correo de la cuenta
+     * @return 202 con un mensaje genérico; 400 si el correo no tiene un formato válido
+     */
+    @PostMapping("/recuperar")
+    public ResponseEntity<Map<String, String>> recuperar(@Valid @RequestBody RecuperarContrasenaDTO datos) {
+        recuperacionContrasenaService.solicitar(datos.correo());
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+            .body(Map.of("mensaje", RecuperacionContrasenaService.RESPUESTA));
+    }
+
+    /**
+     * Completa el perfil de quien ingresó por primera vez con Google (nombre y empresa). Mientras no se
+     * complete, el resto de la aplicación responde 403.
+     *
+     * @param datos nombre de la persona y nombre de su empresa
+     * @return la sesión actualizada; 409 si el perfil ya estaba completo o el nombre de la empresa ya existe
+     */
+    @PostMapping("/completar-perfil")
+    public ResponseEntity<SesionDTO> completarPerfil(@Valid @RequestBody CompletarPerfilDTO datos) {
+        Cuenta cuenta = credencialesService.completarPerfil(usuarioActualService.obtenerCuentaActual(), datos);
+        return ResponseEntity.ok(aSesion(cuenta));
+    }
+
+    /**
      * Cambia la contraseña de la persona con sesión iniciada. Con una contraseña temporal es el paso
      * obligatorio antes de usar el resto de la aplicación.
      *
@@ -110,6 +147,7 @@ public class AuthController {
             cuenta.getCorreo(),
             cuenta.getRol(),
             cuenta.getEmpresaId(),
-            cuenta.isDebeCambiarContrasena());
+            cuenta.isDebeCambiarContrasena(),
+            cuenta.isPerfilCompleto());
     }
 }

@@ -18,6 +18,8 @@ public interface EntrevistaRepository
 
     List<Entrevista> findBySalaId(Long salaId);
 
+    long countByRepresentanteId(Long representanteId);
+
     List<Entrevista> findByRepresentanteId(
         Long representanteId);
 

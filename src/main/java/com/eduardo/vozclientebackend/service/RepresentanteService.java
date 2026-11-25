@@ -156,6 +156,36 @@ public class RepresentanteService {
             d.rol(), d.estado(), d.ultimoIngresoEn(), d.version(), d.creadoEn(), d.actualizadoEn(), enviado);
     }
 
+    /**
+     * Reactiva un representante desactivado. Queda PENDIENTE si nunca ingresó y ACTIVA si ya había
+     * ingresado (misma regla que el módulo de usuarios).
+     */
+    @Transactional
+    public CuentaDTO activarRepresentante(Long id) {
+
+        Long empresaId = obtenerEmpresaAutorizada();
+
+        Cuenta representante = cuentaRepository
+            .findByIdAndEmpresaIdAndRol(id, empresaId, RolCuenta.REPRESENTANTE)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Representante no encontrado"
+            ));
+
+        if (representante.getEstado() != EstadoCuenta.INACTIVA) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "El representante ya está activo"
+            );
+        }
+
+        representante.setEstado(
+            representante.getUltimoIngresoEn() == null ? EstadoCuenta.PENDIENTE : EstadoCuenta.ACTIVA);
+        representante.setActualizadoEn(OffsetDateTime.now());
+
+        return cuentaMapper.toDto(cuentaRepository.saveAndFlush(representante));
+    }
+
     @Transactional
     public CuentaDTO desactivarRepresentante(Long id) {
 

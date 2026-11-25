@@ -1,6 +1,7 @@
 
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.service.EliminacionService;
 import com.eduardo.vozclientebackend.dto.ProductoDTO;
 import com.eduardo.vozclientebackend.dto.ProductoRequestDTO;
 import com.eduardo.vozclientebackend.service.ProductoService;
@@ -22,6 +23,7 @@ import java.util.List;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final EliminacionService eliminacion;
 
     @PreAuthorize("hasAuthority('producto:escribir')")
     @PostMapping
@@ -92,12 +94,12 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAuthority('producto:escribir')")
+    @PreAuthorize("hasAuthority('datos:eliminar')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProducto(
         @PathVariable Long id) {
 
-        productoService.eliminarProducto(id);
+        eliminacion.eliminarProducto(id);
 
         return ResponseEntity.noContent().build();
     }

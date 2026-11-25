@@ -15,4 +15,10 @@ public interface CambioRolRepository
     List<CambioRol> findByCuentaIdOrderByCreadoEnDesc(
         Long cuentaId
     );
+
+    /** Cambios de rol que esta cuenta hizo sobre otras cuentas (auditoría que no se debe perder). */
+    long countByAutorIdAndCuentaIdNot(Long autorId, Long cuentaId);
+
+    /** Historial propio de una cuenta, que se va con ella al eliminarla. */
+    void deleteByCuentaId(Long cuentaId);
 }

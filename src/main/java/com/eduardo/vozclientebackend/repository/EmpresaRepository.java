@@ -15,6 +15,9 @@ import java.util.Optional;
 @Repository
 public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
+    /** Hay una empresa con ese nombre, sin distinguir mayúsculas. */
+    boolean existsByNombreIgnoreCase(String nombre);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Empresa e WHERE e.id = :id")
     Optional<Empresa> bloquearEmpresa(@Param("id") Long id);

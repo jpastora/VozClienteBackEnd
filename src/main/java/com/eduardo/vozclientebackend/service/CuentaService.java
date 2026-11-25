@@ -5,6 +5,7 @@ import com.eduardo.vozclientebackend.dto.CambiarRolRequestDTO;
 import com.eduardo.vozclientebackend.dto.CambioRolDTO;
 import com.eduardo.vozclientebackend.dto.CrearCuentaDTO;
 import com.eduardo.vozclientebackend.dto.CuentaGlobalDTO;
+import com.eduardo.vozclientebackend.dto.EditarCuentaDTO;
 import com.eduardo.vozclientebackend.enums.EstadoCuenta;
 import com.eduardo.vozclientebackend.enums.RolCuenta;
 import com.eduardo.vozclientebackend.models.CambioRol;
@@ -13,6 +14,7 @@ import com.eduardo.vozclientebackend.models.Empresa;
 import com.eduardo.vozclientebackend.repository.CambioRolRepository;
 import com.eduardo.vozclientebackend.repository.CuentaRepository;
 import com.eduardo.vozclientebackend.repository.EmpresaRepository;
+import com.eduardo.vozclientebackend.repository.ProductoRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -51,6 +53,7 @@ public class CuentaService {
     private final CuentaRepository cuentaRepository;
     private final CambioRolRepository cambioRolRepository;
     private final EmpresaRepository empresaRepository;
+    private final ProductoRepository productoRepository;
     private final UsuarioActualService usuarioActualService;
     private final ContrasenaTemporalService contrasenaTemporalService;
     private final CorreoService correoService;
@@ -192,6 +195,64 @@ public class CuentaService {
 
         cuenta.setActualizadoEn(OffsetDateTime.now(reloj));
         return aDto(cuentaRepository.saveAndFlush(cuenta), nombresEmpresas(), null);
+    }
+
+    /**
+     * Edita nombre, correo y empresa de una cuenta.
+     *
+     * <ul>
+     *   <li>El correo de una cuenta vinculada a Google no se puede cambiar: Google identifica a la persona
+     *       por su identificador y el cambio dejaría la cuenta inaccesible.</li>
+     *   <li>Un ADMINISTRADOR no pertenece a ninguna empresa: la empresa que llegue se ignora.</li>
+     *   <li>Un representante con productos asignados no se puede mover de empresa hasta reasignarlos.</li>
+     *   <li>La bitácora no registra estas ediciones (solo los cambios de rol).</li>
+     * </ul>
+     */
+    @Transactional
+    public CuentaGlobalDTO editarCuenta(Long cuentaId, EditarCuentaDTO request) {
+        obtenerAdministrador();
+        Cuenta cuenta = buscar(cuentaId);
+
+        if (!Objects.equals(cuenta.getVersion(), request.version())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "La cuenta fue modificada. Actualice la información");
+        }
+
+        String correo = request.correo().trim().toLowerCase(Locale.ROOT);
+        if (!correo.equalsIgnoreCase(cuenta.getCorreo())) {
+            if (cuenta.getGoogleSub() != null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La cuenta ingresa con Google: su correo no se puede cambiar");
+            }
+            if (cuentaRepository.existsByCorreoIgnoreCase(correo)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Ya existe una cuenta con este correo");
+            }
+            cuenta.setCorreo(correo);
+        }
+
+        if (cuenta.getRol() != RolCuenta.ADMINISTRADOR) {
+            Long empresaId = exigirEmpresa(request.empresaId());
+            if (!Objects.equals(empresaId, cuenta.getEmpresaId())) {
+                if (cuenta.getRol() == RolCuenta.REPRESENTANTE) {
+                    long productos = productoRepository.countByRepresentanteId(cuenta.getId());
+                    if (productos > 0) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "El representante tiene " + productos + " producto(s) asignado(s) en su empresa actual. "
+                                + "Reasígnelos antes de cambiarlo de empresa");
+                    }
+                }
+                cuenta.setEmpresaId(empresaId);
+            }
+        }
+
+        cuenta.setNombreCompleto(request.nombreCompleto().trim());
+        cuenta.setActualizadoEn(OffsetDateTime.now(reloj));
+        try {
+            return aDto(cuentaRepository.saveAndFlush(cuenta), nombresEmpresas(), null);
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una cuenta con este correo");
+        }
     }
 
     /** Genera una contraseña temporal nueva y la envía por correo. */

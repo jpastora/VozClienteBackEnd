@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.controllers;
 
+import com.eduardo.vozclientebackend.service.EliminacionService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.eduardo.vozclientebackend.dto.EmpresaDTO;
 import com.eduardo.vozclientebackend.service.EmpresaService;
@@ -16,6 +17,7 @@ import java.util.List;
 public class EmpresaController {
 
     private final EmpresaService empresaService;
+    private final EliminacionService eliminacion;
 
     @PreAuthorize("hasAuthority('empresa:gestionar')")
     @PostMapping
@@ -50,7 +52,7 @@ public class EmpresaController {
     @PreAuthorize("hasAuthority('empresa:gestionar')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarEmpresa(@PathVariable Long id) {
-        empresaService.eliminarEmpresa(id);
+        eliminacion.eliminarEmpresa(id);
         return ResponseEntity.noContent().build(); // Devuelve 204 No Content cuando se elimina con éxito
     }
 }
