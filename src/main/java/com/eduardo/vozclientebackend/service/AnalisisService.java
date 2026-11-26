@@ -13,6 +13,7 @@ import com.eduardo.vozclientebackend.repository.AnalisisRepository;
 import com.eduardo.vozclientebackend.repository.MencionCompetenciaRepository;
 import com.eduardo.vozclientebackend.repository.TranscripcionRepository;
 import com.eduardo.vozclientebackend.mappers.MencionCompetenciaMapper;
+import com.eduardo.vozclientebackend.enums.EstadoTranscripcion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -65,8 +66,45 @@ public class AnalisisService {
 
     @Transactional
     public AnalisisDTO procesarAnalisis(Long transcripcionId) {
-        Transcripcion transcripcion = transcripcionRepository.findById(transcripcionId)
-            .orElseThrow(() -> new IllegalArgumentException("Transcripción no encontrada para ID: " + transcripcionId));
+
+        Transcripcion transcripcion =
+            transcripcionRepository
+                .findByIdParaActualizar(transcripcionId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "Transcripción no encontrada para ID: "
+                        + transcripcionId
+                ));
+
+        if (transcripcion.getEstado()
+            != EstadoTranscripcion.COMPLETADA) {
+
+            throw new IllegalStateException(
+                "La transcripción todavía no está completada"
+            );
+        }
+
+        if (transcripcion.getTexto() == null
+            || transcripcion.getTexto().isBlank()) {
+
+            throw new IllegalStateException(
+                "La transcripción no contiene texto"
+            );
+        }
+
+        Analisis existente = analisisRepository
+            .findByTranscripcionId(transcripcionId)
+            .orElse(null);
+
+        if (existente != null
+            && existente.getEstado() == EstadoAnalisis.COMPLETADA) {
+
+            log.info(
+                "La transcripción {} ya tiene un análisis completado",
+                transcripcionId
+            );
+
+            return analisisMapper.toDto(existente);
+        }
 
         // Cambiamos el estado a EN_PROCESO si ya existía un registro previo pendiente
         Analisis analisis = analisisRepository.findByTranscripcionId(transcripcionId)
@@ -91,6 +129,32 @@ public class AnalisisService {
                     .responseMimeType("application/json"))
                 .call()
                 .entity(RespuestaAnalisisIA.class);
+
+                if (respuestaIA == null
+                    || respuestaIA.intencion() == null
+                    || respuestaIA.sentimiento() == null) {
+
+                    throw new IllegalStateException(
+                        "Gemini devolvió un análisis incompleto"
+                    );
+                }
+
+                if (respuestaIA.menciones() != null) {
+                    for (MencionIA mencion : respuestaIA.menciones()) {
+
+                        if (mencion == null
+                            || mencion.competidor() == null
+                            || mencion.competidor().isBlank()
+                            || mencion.competidor().length() > 100
+                            || mencion.frecuencia() == null
+                            || mencion.frecuencia() < 1) {
+
+                            throw new IllegalStateException(
+                                "Gemini devolvió una mención de competencia inválida"
+                            );
+                        }
+                    }
+                }
         } catch (Exception e) {
             log.error("Error procesando análisis de IA para transcripción {}", transcripcionId, e);
             return registrarAnalisisFallido(analisis, e.getMessage());
