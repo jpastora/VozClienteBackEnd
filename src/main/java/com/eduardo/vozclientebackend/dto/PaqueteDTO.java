@@ -9,6 +9,7 @@ public record PaqueteDTO(
         Integer cantidadSalas,
         BigDecimal precio,
         Boolean esActivo,
+        Boolean esRecomendado,
         OffsetDateTime creadoEn,
         OffsetDateTime actualizadoEn
 ) {}

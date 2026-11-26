@@ -30,6 +30,10 @@ public class Paquete {
     @Column(name = "es_activo", nullable = false)
     private Boolean esActivo;
 
+    /** El paquete que el catálogo muestra como «Recomendado»; como máximo uno (lo elige el administrador). */
+    @Column(name = "es_recomendado", nullable = false)
+    private Boolean esRecomendado = false;
+
     @Column(name = "creado_en", nullable = false)
     private OffsetDateTime creadoEn;
 

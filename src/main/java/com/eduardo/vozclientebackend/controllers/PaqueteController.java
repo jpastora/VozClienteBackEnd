@@ -109,6 +109,26 @@ public class PaqueteController {
     }
 
     /**
+     * Marca el paquete como el recomendado del catálogo (solo uno; se le quita al anterior).
+     * Endpoint: PATCH /api/paquetes/{id}/recomendar
+     */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
+    @PatchMapping("/{id}/recomendar")
+    public ResponseEntity<PaqueteDTO> recomendar(@PathVariable Long id) {
+        return ResponseEntity.ok(paqueteService.recomendar(id));
+    }
+
+    /**
+     * Quita la marca de recomendado.
+     * Endpoint: PATCH /api/paquetes/{id}/quitar-recomendado
+     */
+    @PreAuthorize("hasAuthority('paquete:gestionar')")
+    @PatchMapping("/{id}/quitar-recomendado")
+    public ResponseEntity<PaqueteDTO> quitarRecomendado(@PathVariable Long id) {
+        return ResponseEntity.ok(paqueteService.quitarRecomendado(id));
+    }
+
+    /**
      * Elimina un paquete que nunca se vendió (409 si ya tiene compras: se desactiva).
      * Endpoint: DELETE /api/paquetes/{id}
      */

@@ -28,6 +28,8 @@ import java.util.List;
  *   <li>Editar un paquete solo afecta las compras futuras: cada compra guarda su monto y sus salas.</li>
  *   <li>Desactivar un paquete deja de ofrecerlo, pero conserva el saldo de quienes ya lo compraron.
  *       Un paquete que ya se vendió no se elimina: se desactiva.</li>
+ *   <li>El administrador elige cuál paquete se muestra como «Recomendado». Solo puede haber uno y
+ *       debe estar activo; al desactivarlo, deja de ser el recomendado.</li>
  * </ul>
  */
 @Service
@@ -57,6 +59,7 @@ public class PaqueteService {
         paquete.setCantidadSalas(datos.cantidadSalas());
         paquete.setPrecio(datos.precio());
         paquete.setEsActivo(datos.esActivo() == null || datos.esActivo());
+        paquete.setEsRecomendado(false);
         OffsetDateTime ahora = OffsetDateTime.now(reloj);
         paquete.setCreadoEn(ahora);
         paquete.setActualizadoEn(ahora);
@@ -150,9 +153,46 @@ public class PaqueteService {
         cambiarEstado(id, true);
     }
 
+    /**
+     * Marca el paquete como el recomendado del catálogo y se lo quita al que lo era antes.
+     *
+     * @throws ResponseStatusException 404 si no existe; 409 si está inactivo
+     */
+    @Transactional
+    public PaqueteDTO recomendar(Long id) {
+        Paquete paquete = buscar(id);
+        if (!Boolean.TRUE.equals(paquete.getEsActivo())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "Solo un paquete activo puede ser el recomendado. Actívalo primero.");
+        }
+        paqueteRepository.quitarRecomendadoExcepto(id);
+        // La consulta anterior limpia el contexto de persistencia: se vuelve a leer el paquete.
+        Paquete actualizado = buscar(id);
+        actualizado.setEsRecomendado(true);
+        actualizado.setActualizadoEn(OffsetDateTime.now(reloj));
+        return paqueteMapper.toDto(paqueteRepository.save(actualizado));
+    }
+
+    /**
+     * Quita la marca de recomendado: el catálogo queda sin paquete destacado.
+     *
+     * @throws ResponseStatusException 404 si no existe
+     */
+    @Transactional
+    public PaqueteDTO quitarRecomendado(Long id) {
+        Paquete paquete = buscar(id);
+        paquete.setEsRecomendado(false);
+        paquete.setActualizadoEn(OffsetDateTime.now(reloj));
+        return paqueteMapper.toDto(paqueteRepository.save(paquete));
+    }
+
     private void cambiarEstado(Long id, boolean activo) {
         Paquete paquete = buscar(id);
         paquete.setEsActivo(activo);
+        if (!activo) {
+            // Un paquete que no se ofrece no puede ser el recomendado.
+            paquete.setEsRecomendado(false);
+        }
         paquete.setActualizadoEn(OffsetDateTime.now(reloj));
         paqueteRepository.save(paquete);
     }
