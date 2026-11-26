@@ -172,7 +172,7 @@ public class CompraService {
             long acreditadasSinEsta = saldo.acreditadas() - compra.getSalasAcreditadas();
             if (acreditadasSinEsta < saldo.consumidas() + saldo.reservadas()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "No se puede eliminar: la empresa ya usó o reservó salas de esta compra.");
+                    "No se puede anular: la empresa ya usó o reservó salas de esta compra.");
             }
         }
         compraRepository.delete(compra);
