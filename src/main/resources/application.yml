@@ -82,3 +82,10 @@ app:
   storage:
     grabaciones:
       path: ${APP_STORAGE_GRABACIONES_PATH:./uploads/grabaciones}
+
+# Procesamiento automático de análisis mediante Gemini
+analisis:
+  auto: ${ANALISIS_AUTO:true}
+  max-intentos: ${ANALISIS_MAX_INTENTOS:3}
+  espera-reintento-segundos: 60
+  intervalo-recuperacion-ms: 30000
