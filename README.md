@@ -274,6 +274,7 @@ URI de redirección registrados en Google Cloud: `http://localhost:8070/login/oa
 - Nombre obligatorio, de hasta 50 caracteres y único sin importar mayúsculas (`409` si se repite). Cantidad de salas ≥ 1. Precio ≥ 0, con dos decimales como máximo.
 - Editar un paquete solo afecta las compras futuras: cada compra guarda su monto y sus salas.
 - `PATCH /api/paquetes/{id}/desactivar` deja de ofrecerlo sin tocar el saldo de quienes lo compraron, y `PATCH /api/paquetes/{id}/activar` lo vuelve a ofrecer. Un paquete que ya se vendió no se elimina (`409`): se desactiva.
+- **Recomendado:** el administrador elige qué paquete se muestra como «Recomendado» con `PATCH /api/paquetes/{id}/recomendar` (se le quita al anterior; debe estar activo) y lo quita con `PATCH /api/paquetes/{id}/quitar-recomendado`. Solo puede haber uno (índice único parcial `uq_paquetes_un_recomendado`, migración V12). Desactivar un paquete también le quita la marca.
 
 ## 10. Versionado
 

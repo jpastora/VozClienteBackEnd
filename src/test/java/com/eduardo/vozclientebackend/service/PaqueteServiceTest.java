@@ -52,12 +52,12 @@ class PaqueteServiceTest {
         lenient().when(paqueteMapper.toDto(any(Paquete.class))).thenAnswer(i -> {
             Paquete p = i.getArgument(0);
             return new PaqueteDTO(p.getId(), p.getNombre(), p.getCantidadSalas(), p.getPrecio(), p.getEsActivo(),
-                p.getCreadoEn(), p.getActualizadoEn());
+                p.getEsRecomendado(), p.getCreadoEn(), p.getActualizadoEn());
         });
     }
 
     private static PaqueteDTO datos(String nombre, Integer salas, String precio) {
-        return new PaqueteDTO(null, nombre, salas, precio == null ? null : new BigDecimal(precio), null, null, null);
+        return new PaqueteDTO(null, nombre, salas, precio == null ? null : new BigDecimal(precio), null, null, null, null);
     }
 
     private static Paquete existente(Long id, String nombre) {
@@ -178,6 +178,58 @@ class PaqueteServiceTest {
         servicio.eliminarPaquete(1L);
 
         verify(paqueteRepository).delete(paquete);
+    }
+
+    @Test
+    void crear_noQuedaComoRecomendado() {
+        when(paqueteRepository.findByNombreIgnoreCase("Plan")).thenReturn(Optional.empty());
+        when(paqueteRepository.save(any(Paquete.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertThat(servicio.crearPaquete(datos("Plan", 5, "90")).esRecomendado()).isFalse();
+    }
+
+    @Test
+    void recomendar_paqueteActivo_quitaElAnteriorYLoMarca() {
+        Paquete paquete = existente(2L, "Medio");
+        when(paqueteRepository.findById(2L)).thenReturn(Optional.of(paquete));
+        when(paqueteRepository.save(any(Paquete.class))).thenAnswer(i -> i.getArgument(0));
+
+        PaqueteDTO recomendado = servicio.recomendar(2L);
+
+        verify(paqueteRepository).quitarRecomendadoExcepto(2L);
+        assertThat(recomendado.esRecomendado()).isTrue();
+    }
+
+    @Test
+    void recomendar_paqueteInactivo_responde409() {
+        Paquete paquete = existente(2L, "Medio");
+        paquete.setEsActivo(false);
+        when(paqueteRepository.findById(2L)).thenReturn(Optional.of(paquete));
+
+        assertThatThrownBy(() -> servicio.recomendar(2L))
+            .satisfies(e -> assertThat(estadoDe(e)).isEqualTo(HttpStatus.CONFLICT.value()));
+        verify(paqueteRepository, never()).quitarRecomendadoExcepto(any());
+    }
+
+    @Test
+    void quitarRecomendado_dejaElPaqueteSinMarca() {
+        Paquete paquete = existente(2L, "Medio");
+        paquete.setEsRecomendado(true);
+        when(paqueteRepository.findById(2L)).thenReturn(Optional.of(paquete));
+        when(paqueteRepository.save(any(Paquete.class))).thenAnswer(i -> i.getArgument(0));
+
+        assertThat(servicio.quitarRecomendado(2L).esRecomendado()).isFalse();
+    }
+
+    @Test
+    void desactivar_tambienLeQuitaLaMarcaDeRecomendado() {
+        Paquete paquete = existente(2L, "Medio");
+        paquete.setEsRecomendado(true);
+        when(paqueteRepository.findById(2L)).thenReturn(Optional.of(paquete));
+
+        servicio.desactivarPaquete(2L);
+
+        assertThat(paquete.getEsRecomendado()).isFalse();
     }
 
     @Test
