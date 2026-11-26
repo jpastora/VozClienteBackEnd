@@ -65,16 +65,22 @@ public class TranscripcionService {
     private final ColaTranscripcion cola;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public TranscripcionService(TranscripcionRepository transcripcionRepository,
-                                GrabacionRepository grabacionRepository,
-                                TranscripcionMapper transcripcionMapper,
-                                RestTemplateBuilder restTemplateBuilder,
-                                ColaTranscripcion cola) {
+    private final AnalisisAutomaticoService analisisAutomaticoService;
+
+    public TranscripcionService(
+        TranscripcionRepository transcripcionRepository,
+        GrabacionRepository grabacionRepository,
+        TranscripcionMapper transcripcionMapper,
+        RestTemplateBuilder restTemplateBuilder,
+        ColaTranscripcion cola,
+        AnalisisAutomaticoService analisisAutomaticoService
+    ) {
         this.transcripcionRepository = transcripcionRepository;
         this.grabacionRepository = grabacionRepository;
         this.transcripcionMapper = transcripcionMapper;
         this.cola = cola;
-        // Whisper puede tardar varios minutos con audios largos
+        this.analisisAutomaticoService = analisisAutomaticoService;
+
         this.restTemplate = restTemplateBuilder
             .connectTimeout(Duration.ofSeconds(10))
             .readTimeout(Duration.ofMinutes(15))
@@ -261,7 +267,16 @@ public class TranscripcionService {
                 t.setTexto(texto);
                 t.setEstado(EstadoTranscripcion.COMPLETADA);
             }
-            transcripcionRepository.save(t);
+
+            Transcripcion guardada =
+                transcripcionRepository.save(t);
+
+            if (guardada.getEstado()
+                == EstadoTranscripcion.COMPLETADA) {
+
+                analisisAutomaticoService
+                    .solicitarAutomatico(guardada.getId());
+            }
 
         } catch (HttpStatusCodeException e) {
             log.error("Error HTTP {} desde Whisper para transcripción {}: {}",
