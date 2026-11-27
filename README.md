@@ -146,6 +146,11 @@ src/
 | Crear | `POST` | `/api/v1/productos` | `201 Created` |
 | Actualizar | `PUT` | `/api/v1/productos/{id}` | `200 OK` |
 | Eliminar | `DELETE` | `/api/v1/productos/{id}` | `204 No Content` |
+| Actualizar representante | `PATCH` | `/api/representantes/{id}` | `200 OK` |
+
+La actualización de representante recibe `nombreCompleto` o `correo` (al menos uno) junto con la
+`version` actual de la cuenta. Un cambio de correo en una cuenta PENDIENTE con contraseña temporal
+genera y envía una temporal nueva; el resultado informa `correoEnviado`.
 
 Los errores se manejan de forma centralizada con `@RestControllerAdvice` y devuelven un cuerpo uniforme.
 

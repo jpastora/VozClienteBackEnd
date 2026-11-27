@@ -1,5 +1,6 @@
 package com.eduardo.vozclientebackend.service;
 
+import com.eduardo.vozclientebackend.dto.ActualizarRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CrearRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
 import com.eduardo.vozclientebackend.enums.EstadoCuenta;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -241,5 +243,129 @@ public class RepresentanteService {
         }
 
         return usuarioActualService.empresaEfectiva();
+    }
+
+    /**
+     * Actualiza el nombre o correo de un representante.
+     *
+     * @param id identificador del representante
+     * @param dto campos que se actualizarán y versión esperada de la cuenta
+     * @return representante actualizado; indica si se envió la contraseña temporal cuando aplica
+     */
+    @Transactional
+    public CuentaDTO actualizarRepresentante(Long id, ActualizarRepresentanteDTO dto) {
+
+        Long empresaId = obtenerEmpresaAutorizada();
+
+        if (dto == null || (dto.nombreCompleto() == null && dto.correo() == null)) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Debe enviar al menos el nombre completo o el correo electrónico"
+            );
+        }
+
+        Cuenta representante = cuentaRepository
+            .findByIdAndEmpresaIdAndRol(id, empresaId, RolCuenta.REPRESENTANTE)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Representante no encontrado"
+            ));
+
+        if (!Objects.equals(representante.getVersion(), dto.version())) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "La cuenta fue modificada. Actualice la información"
+            );
+        }
+
+        boolean huboCambios = false;
+        boolean cambioDireccionCorreo = false;
+
+        if (dto.nombreCompleto() != null) {
+            String nombreNormalizado = dto.nombreCompleto().trim();
+            if (nombreNormalizado.length() < 2) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El nombre debe tener al menos 2 caracteres"
+                );
+            }
+            if (nombreNormalizado.length() > 100) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El nombre no puede superar 100 caracteres"
+                );
+            }
+            if (!nombreNormalizado.equals(representante.getNombreCompleto())) {
+                representante.setNombreCompleto(nombreNormalizado);
+                huboCambios = true;
+            }
+        }
+
+        if (dto.correo() != null) {
+            String correoNormalizado = dto.correo().trim().toLowerCase(Locale.ROOT);
+            if (correoNormalizado.isEmpty()) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El correo electrónico es obligatorio"
+                );
+            }
+            if (correoNormalizado.length() > 254) {
+                throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "El correo no puede superar 254 caracteres"
+                );
+            }
+
+            cambioDireccionCorreo = !correoNormalizado.equalsIgnoreCase(representante.getCorreo());
+            if (cambioDireccionCorreo) {
+                if (cuentaRepository.existsByCorreoIgnoreCase(correoNormalizado)) {
+                    throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Ya existe una cuenta registrada con este correo"
+                    );
+                }
+            }
+            if (!correoNormalizado.equals(representante.getCorreo())) {
+                representante.setCorreo(correoNormalizado);
+                huboCambios = true;
+            }
+        }
+
+        if (!huboCambios) {
+            return cuentaMapper.toDto(representante);
+        }
+
+        String contrasenaTemporal = null;
+        if (cambioDireccionCorreo
+            && representante.getEstado() == EstadoCuenta.PENDIENTE
+            && representante.getGoogleSub() == null
+            && representante.getContrasenaHash() != null
+            && representante.isDebeCambiarContrasena()) {
+            contrasenaTemporal = contrasenaTemporalService.asignar(representante);
+        }
+
+        OffsetDateTime ahora = OffsetDateTime.now();
+        representante.setActualizadoEn(ahora);
+        try {
+            Cuenta actualizada = cuentaRepository.saveAndFlush(representante);
+
+            CuentaDTO resultado = cuentaMapper.toDto(actualizada);
+            if (contrasenaTemporal != null) {
+                boolean enviado = correoService.enviarContrasenaTemporal(
+                    actualizada.getCorreo(),
+                    actualizada.getNombreCompleto(),
+                    contrasenaTemporal,
+                    actualizada.getContrasenaTemporalVenceEn()
+                );
+                return conEnvio(resultado, enviado);
+            }
+            return resultado;
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "No se pudo actualizar el representante. Verifique el correo",
+                ex
+            );
+        }
     }
 }
