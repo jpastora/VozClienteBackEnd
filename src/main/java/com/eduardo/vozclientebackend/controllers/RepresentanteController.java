@@ -1,9 +1,9 @@
 package com.eduardo.vozclientebackend.controllers;
 
-import com.eduardo.vozclientebackend.service.EliminacionService;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.eduardo.vozclientebackend.dto.ActualizarRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CrearRepresentanteDTO;
 import com.eduardo.vozclientebackend.dto.CuentaDTO;
+import com.eduardo.vozclientebackend.service.EliminacionService;
 import com.eduardo.vozclientebackend.service.RepresentanteService;
 
 import jakarta.validation.Valid;
@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -102,5 +103,20 @@ public class RepresentanteController {
     public ResponseEntity<Void> eliminarRepresentante(@PathVariable Long id) {
         eliminacion.eliminarRepresentante(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * PATCH /api/representantes/{id}. Actualiza el nombre completo o el correo de un representante.
+     */
+    @PreAuthorize("hasAuthority('representante:gestionar')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<CuentaDTO> actualizarRepresentante(
+        @PathVariable Long id,
+        @Valid @RequestBody ActualizarRepresentanteDTO dto) {
+
+        CuentaDTO representante =
+            representanteService.actualizarRepresentante(id, dto);
+
+        return ResponseEntity.ok(representante);
     }
 }
